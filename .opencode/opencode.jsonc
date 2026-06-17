@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "environment": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["npx", "-y", "@anthropic/mcp-postgres"],
+      "environment": {
+        "DATABASE_URL": "postgres://postgres:postgres@localhost:54322/postgres"
+      }
+    },
+    "supabase": {
+      "type": "local",
+      "command": ["npx", "-y", "@executeautomation/mcp-server-supabase"],
+      "environment": {
+        "SUPABASE_URL": "http://localhost:54321",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
+      }
+    },
+    "vercel": {
+      "type": "local",
+      "command": ["npx", "-y", "@mcp/vercel"],
+      "environment": {
+        "VERCEL_TOKEN": "${VERCEL_TOKEN}"
+      }
+    }
+  }
+}
