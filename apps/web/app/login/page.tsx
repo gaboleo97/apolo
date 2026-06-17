@@ -1,67 +1,71 @@
 import Link from "next/link";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Avatar from "@mui/material/Avatar";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-hero px-4">
-      <div className="w-full max-w-sm">
-        <div className="rounded-xl border border-border bg-surface p-8 glow-sm">
-          <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent">
-              <span className="text-xl font-bold text-white">A</span>
-            </div>
-            <h1 className="text-xl font-bold text-white">Iniciar sesión</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Ingresá a tu cuenta de Apolo
-            </p>
-          </div>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 2,
+        background: "linear-gradient(135deg, #0a1628 0%, #000000 50%, #0a1628 100%)",
+      }}
+    >
+      <Paper sx={{ p: 4, width: "100%", maxWidth: 400 }}>
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 48, height: 48, fontSize: 20, fontWeight: 700, mx: "auto", mb: 2 }}>
+            A
+          </Avatar>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Iniciar sesión
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Ingresá a tu cuenta de Apolo
+          </Typography>
+        </Box>
 
-          <form className="space-y-5" action="/api/auth/callback/credentials" method="POST">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                className="mt-1.5 block w-full rounded-lg border border-border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-dark focus:border-accent focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
-                placeholder="tu@email.com"
-              />
-            </div>
+        <Box component="form" action="/api/auth/callback/credentials" method="POST" sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <TextField
+            id="email"
+            name="email"
+            label="Email"
+            type="email"
+            required
+            fullWidth
+            size="small"
+            autoComplete="email"
+            placeholder="tu@email.com"
+          />
+          <TextField
+            id="password"
+            name="password"
+            label="Contraseña"
+            type="password"
+            required
+            fullWidth
+            size="small"
+            autoComplete="current-password"
+            placeholder="••••••••"
+          />
+          <Button type="submit" variant="contained" fullWidth disableElevation sx={{ py: 1.2 }}>
+            Iniciar sesión
+          </Button>
+        </Box>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                className="mt-1.5 block w-full rounded-lg border border-border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-dark focus:border-accent focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-accent-hover glow-sm"
-            >
-              Iniciar sesión
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            ¿No tenés cuenta?{" "}
-            <Link href="/register" className="font-medium text-accent hover:text-accent-light transition-colors">
-              Registrate
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 4 }}>
+          ¿No tenés cuenta?{" "}
+          <Typography component={Link} href="/register" variant="body2" color="primary" sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+            Registrate
+          </Typography>
+        </Typography>
+      </Paper>
+    </Box>
   );
 }

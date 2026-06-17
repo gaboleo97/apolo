@@ -1,4 +1,15 @@
 import Link from "next/link";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Avatar from "@mui/material/Avatar";
 
 const modules = [
   {
@@ -35,98 +46,134 @@ const modules = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
-              <span className="text-sm font-bold text-white">A</span>
-            </div>
-            <span className="text-lg font-bold text-white">Apolo</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/login"
-              className="rounded-lg px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-white"
-            >
-              Iniciar sesión
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white transition-all hover:bg-accent-hover glow-sm"
-            >
-              Comenzar gratis
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+      <AppBar position="fixed">
+        <Toolbar>
+          <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, mr: 1, fontSize: 14, fontWeight: 700 }}>
+            A
+          </Avatar>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
+            Apolo
+          </Typography>
+          <Button component={Link} href="/login" sx={{ color: "text.secondary", mr: 1 }}>
+            Iniciar sesión
+          </Button>
+          <Button component={Link} href="/register" variant="contained" disableElevation>
+            Comenzar gratis
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-      {/* Hero */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-20">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-radial opacity-40" />
-        <div className="relative z-10 mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-sm text-accent-light">
-            <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-            Plataforma modular para empresas
-          </div>
-          <h1 className="text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          px: 3,
+          pt: 8,
+          background: "linear-gradient(135deg, #0a1628 0%, #000000 50%, #0a1628 100%)",
+        }}
+      >
+        <Container maxWidth="md" sx={{ textAlign: "center", position: "relative", zIndex: 1 }}>
+          <Chip
+            label="Plataforma modular para empresas"
+            size="small"
+            sx={{
+              mb: 3,
+              borderColor: "primary.main",
+              color: "primary.light",
+              bgcolor: "rgba(37, 99, 235, 0.08)",
+              fontWeight: 500,
+            }}
+            variant="outlined"
+          />
+          <Typography variant="h2" component="h1" sx={{ fontSize: { xs: "2rem", sm: "3rem", md: "3.75rem" } }}>
             Gestiona tu empresa con
-            <span className="bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent"> módulos inteligentes</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+            <Typography
+              component="span"
+              variant="inherit"
+              sx={{
+                background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                ml: 1,
+              }}
+            >
+              módulos inteligentes
+            </Typography>
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 3, maxWidth: 600, mx: "auto", fontSize: "1.125rem" }}>
             Inventario, ventas, compras, contabilidad y facturación electrónica.
-            Activa solo los módulos que necesites y escala cuando quieras.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <Link
-              href="/register"
-              className="rounded-lg bg-accent px-8 py-3 text-base font-medium text-white transition-all hover:bg-accent-hover glow"
-            >
+            Activá solo los módulos que necesites y escala cuando quieras.
+          </Typography>
+          <Box sx={{ mt: 5, display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap" }}>
+            <Button component={Link} href="/register" variant="contained" size="large" disableElevation>
               Comenzar gratis
-            </Link>
-            <Link
-              href="#modulos"
-              className="rounded-lg border border-border bg-surface px-8 py-3 text-base font-medium text-white transition-all hover:bg-surface-hover"
-            >
+            </Button>
+            <Button component={Link} href="#modulos" variant="outlined" size="large">
               Ver módulos
-            </Link>
-          </div>
-        </div>
-      </section>
+            </Button>
+          </Box>
+        </Container>
+      </Box>
 
-      {/* Módulos */}
-      <section id="modulos" className="relative px-6 pb-32">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-16 text-center">
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
+      <Box id="modulos" sx={{ py: 12, px: 3 }}>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", mb: 8 }}>
+            <Typography variant="h3" gutterBottom>
               Módulos para cada área
-            </h2>
-            <p className="mt-4 text-muted-foreground">
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
               Activá solo lo que necesitás. Pagá solo por lo que usás.
-            </p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            </Typography>
+          </Box>
+          <Grid container spacing={3}>
             {modules.map((mod) => (
-              <div
-                key={mod.title}
-                className="group rounded-xl border border-border bg-surface p-6 transition-all hover:border-accent/30 hover:bg-surface-hover hover:glow-sm"
-              >
-                <span className="text-3xl">{mod.icon}</span>
-                <h3 className="mt-4 text-lg font-semibold text-white">{mod.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{mod.desc}</p>
-              </div>
+              <Grid key={mod.title} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card
+                  sx={{
+                    p: 2,
+                    transition: "all 0.2s",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      bgcolor: "rgba(37, 99, 235, 0.03)",
+                      boxShadow: "0 0 30px rgba(37, 99, 235, 0.08)",
+                    },
+                  }}
+                >
+                  <CardContent>
+                    <Typography variant="h4" sx={{ mb: 1 }}>
+                      {mod.icon}
+                    </Typography>
+                    <Typography variant="h6" gutterBottom>
+                      {mod.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {mod.desc}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
             ))}
-          </div>
-        </div>
-      </section>
+          </Grid>
+        </Container>
+      </Box>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-surface px-6 py-12">
-        <div className="mx-auto max-w-7xl text-center text-sm text-muted-foreground">
-          <p>© 2026 Apolo. Todos los derechos reservados.</p>
-        </div>
-      </footer>
-    </div>
+      <Box
+        component="footer"
+        sx={{
+          borderTop: "1px solid",
+          borderColor: "divider",
+          py: 4,
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          © 2026 Apolo. Todos los derechos reservados.
+        </Typography>
+      </Box>
+    </Box>
   );
 }

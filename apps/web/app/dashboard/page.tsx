@@ -1,4 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@apolo/ui";
+"use client";
+
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
 const stats = [
   { label: "Productos", value: "0", icon: "📦" },
@@ -9,29 +15,35 @@ const stats = [
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Dashboard
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
           Resumen general de tu empresa
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Grid container spacing={2}>
         {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.label}
-              </CardTitle>
-              <span className="text-lg">{stat.icon}</span>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-white">{stat.value}</p>
-            </CardContent>
-          </Card>
+          <Grid key={stat.label} size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {stat.label}
+                  </Typography>
+                  <Typography variant="h5">{stat.icon}</Typography>
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  {stat.value}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
-    </div>
+      </Grid>
+    </Box>
   );
 }
