@@ -46,3 +46,6 @@ coverage/
 
 # Supabase local
 supabase/.temp/
+
+# opencode local tokens
+.opencode/.env

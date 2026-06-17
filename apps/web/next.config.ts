@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   transpilePackages: [
     "@apolo/core",
     "@apolo/database",
