@@ -3,8 +3,11 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { db } from "@apolo/database";
 import { users } from "@apolo/database";
+import { getEffectiveModules } from "@apolo/core";
+import { authConfig } from "./auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -32,29 +35,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name ?? undefined,
           tenantId: user.tenantId,
           role: user.role,
+          modules: getEffectiveModules(user.role ?? "viewer", user.modules),
         };
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.tenantId = (user as Record<string, string>).tenantId;
-        token.role = (user as Record<string, string>).role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.tenantId = token.tenantId as string;
-        session.user.role = token.role as string;
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: "/login",
-  },
 });

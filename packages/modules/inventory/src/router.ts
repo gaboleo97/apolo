@@ -16,6 +16,7 @@ export function createInventoryRouter(db: DB) {
       .query(async ({ ctx, input }) => {
         return db.query.products.findMany({
           where: and(
+            eq(products.tenantId, ctx.session.tenantId),
             input.search ? like(products.name, `%${input.search}%`) : undefined,
             input.categoryId ? eq(products.categoryId, input.categoryId) : undefined,
           ),
@@ -27,10 +28,9 @@ export function createInventoryRouter(db: DB) {
 
     getProduct: protectedProcedure
       .input(z.object({ id: z.string().uuid() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
         return db.query.products.findFirst({
-          where: eq(products.id, input.id),
-          with: { category: true },
+          where: and(eq(products.id, input.id), eq(products.tenantId, ctx.session.tenantId)),
         });
       }),
 
@@ -69,7 +69,7 @@ export function createInventoryRouter(db: DB) {
         return db.transaction(async (tx) => {
           await tx.update(products)
             .set({ currentStock: sql`current_stock + ${sign * input.quantity}` })
-            .where(eq(products.id, input.productId));
+            .where(and(eq(products.id, input.productId), eq(products.tenantId, ctx.session.tenantId)));
 
           await tx.insert(stockMovements).values({
             productId: input.productId,
@@ -82,9 +82,9 @@ export function createInventoryRouter(db: DB) {
         });
       }),
 
-    listCategories: protectedProcedure.query(async () => {
+    listCategories: protectedProcedure.query(async ({ ctx }) => {
       return db.query.categories.findMany({
-        where: eq(categories.isActive, true),
+        where: and(eq(categories.isActive, true), eq(categories.tenantId, ctx.session.tenantId)),
         orderBy: desc(categories.createdAt),
       });
     }),

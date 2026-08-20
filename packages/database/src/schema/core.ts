@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   role: text("role", {
     enum: ["super_admin", "tenant_admin", "manager", "seller", "viewer"],
   }).default("viewer"),
+  modules: jsonb("modules").$type<string[]>(),
   avatar: text("avatar"),
   isActive: boolean("is_active").default(true),
   lastLogin: timestamp("last_login"),

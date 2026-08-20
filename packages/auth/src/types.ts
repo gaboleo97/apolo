@@ -1,5 +1,3 @@
-import type { Session } from "@apolo/core";
-
 declare module "next-auth" {
   interface Session {
     user: {
@@ -8,6 +6,9 @@ declare module "next-auth" {
       name?: string;
       tenantId: string;
       role: string;
+      modules: string[];
     };
   }
 }
+
+export {};
