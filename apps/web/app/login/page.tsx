@@ -1,12 +1,44 @@
-import Link from "next/link";
+"use client";
+
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
 
-export default function LoginPage() {
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get("registered");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const form = new FormData(e.currentTarget);
+    const res = await signIn("credentials", {
+      redirect: false,
+      email: form.get("email") as string,
+      password: form.get("password") as string,
+    });
+
+    if (res?.ok && !res.error) {
+      router.push("/dashboard");
+      router.refresh();
+    } else {
+      setError("Email o contraseña incorrectos");
+      setLoading(false);
+    }
+  }
+
   return (
     <Box
       sx={{
@@ -31,41 +63,31 @@ export default function LoginPage() {
           </Typography>
         </Box>
 
-        <Box component="form" action="/api/auth/callback/credentials" method="POST" sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-          <TextField
-            id="email"
-            name="email"
-            label="Email"
-            type="email"
-            required
-            fullWidth
-            size="small"
-            autoComplete="email"
-            placeholder="tu@email.com"
-          />
-          <TextField
-            id="password"
-            name="password"
-            label="Contraseña"
-            type="password"
-            required
-            fullWidth
-            size="small"
-            autoComplete="current-password"
-            placeholder="••••••••"
-          />
-          <Button type="submit" variant="contained" fullWidth disableElevation sx={{ py: 1.2 }}>
-            Iniciar sesión
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          {registered && <Alert severity="success">Cuenta creada. Ya podés iniciar sesión.</Alert>}
+          {error && <Alert severity="error">{error}</Alert>}
+          <TextField name="email" label="Email" type="email" required fullWidth size="small" autoComplete="email" placeholder="tu@email.com" />
+          <TextField name="password" label="Contraseña" type="password" required fullWidth size="small" autoComplete="current-password" placeholder="••••••••" />
+          <Button type="submit" variant="contained" fullWidth disableElevation sx={{ py: 1.2 }} disabled={loading}>
+            {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 4 }}>
           ¿No tenés cuenta?{" "}
-          <Typography component={Link} href="/register" variant="body2" color="primary" sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+          <Typography component="a" href="/register" variant="body2" color="primary" sx={{ textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
             Registrate
           </Typography>
         </Typography>
       </Paper>
     </Box>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
