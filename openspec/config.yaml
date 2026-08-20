@@ -1,0 +1,34 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context: |
+  Tech stack: pnpm monorepo (Turborepo), Next.js 15 (App Router, React 19), MUI 9,
+  Drizzle ORM (PostgreSQL via Supabase), NextAuth v5 (credentials), tRPC, Resend.
+  Idiomas: código y specs en español (es-AR).
+  Estructura: apps/web (frontend), packages/database (schema Drizzle + cliente),
+  packages/auth (NextAuth), packages/core (tRPC/types), packages/modules/* (dominios).
+  Auth: login por email+password con bcrypt; registra tenant + usuario tenant_admin.
+  Commits: convencionales (feat/fix/chore).
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

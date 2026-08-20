@@ -15,6 +15,7 @@ export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
   name: text("name"),
   role: text("role", {
     enum: ["super_admin", "tenant_admin", "manager", "seller", "viewer"],

@@ -47,5 +47,8 @@ coverage/
 # Supabase local
 supabase/.temp/
 
+# TypeScript build info
+*.tsbuildinfo
+
 # opencode local tokens
 .opencode/.env

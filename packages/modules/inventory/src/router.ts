@@ -50,6 +50,9 @@ export function createInventoryRouter(db: DB) {
       .mutation(async ({ ctx, input }) => {
         return db.insert(products).values({
           ...input,
+          price: String(input.price),
+          cost: input.cost !== undefined ? String(input.cost) : undefined,
+          taxRate: String(input.taxRate),
           tenantId: ctx.session.tenantId,
         }).returning();
       }),

@@ -62,6 +62,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.7(react@19.2.7)
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -119,6 +122,9 @@ importers:
       '@apolo/core':
         specifier: workspace:*
         version: link:../core
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       drizzle-orm:
         specifier: ^0.40.0
         version: 0.40.1(gel@2.2.0)(postgres@3.4.9)
@@ -132,6 +138,9 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.21
@@ -154,6 +163,9 @@ importers:
         specifier: ^4.1.0
         version: 4.8.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -230,6 +242,9 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
       typescript:
         specifier: ^5.7.0
         version: 5.9.3

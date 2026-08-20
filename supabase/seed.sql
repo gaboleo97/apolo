@@ -1,0 +1,3 @@
+-- El seed de datos se ejecuta con `pnpm --filter @apolo/database db:seed`
+-- (usa Drizzle + bcryptjs y aplica a local y producción).
+-- Este archivo se mantiene vacío para que `supabase db reset` no falle.

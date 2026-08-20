@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { db } from "@apolo/database";
@@ -13,13 +14,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         const email = credentials?.email as string;
-        if (!email) return null;
+        const password = credentials?.password as string;
+        if (!email || !password) return null;
 
         const user = await db.query.users.findFirst({
           where: (users, { eq }) => eq(users.email, email),
         });
 
         if (!user || !user.isActive) return null;
+
+        const isValid = await bcrypt.compare(password, user.passwordHash);
+        if (!isValid) return null;
 
         return {
           id: user.id,

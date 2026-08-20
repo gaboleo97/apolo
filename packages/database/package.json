@@ -9,17 +9,20 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:seed": "node --experimental-strip-types src/seed.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .turbo node_modules"
   },
   "dependencies": {
     "@apolo/core": "workspace:*",
+    "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.40.0",
     "drizzle-zod": "^0.7.0",
     "postgres": "^3.4.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.0.0",
     "drizzle-kit": "^0.30.0",
     "typescript": "^5.7.0"
