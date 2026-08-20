@@ -60,3 +60,12 @@ export const auditLogs = pgTable("audit_logs", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});

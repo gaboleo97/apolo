@@ -15,6 +15,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
+  const reset = searchParams.get("reset");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -65,12 +66,16 @@ function LoginForm() {
 
         <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           {registered && <Alert severity="success">Cuenta creada. Ya podés iniciar sesión.</Alert>}
+          {reset && <Alert severity="success">Contraseña actualizada. Ya podés iniciar sesión.</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
           <TextField name="email" label="Email" type="email" required fullWidth size="small" autoComplete="email" placeholder="tu@email.com" />
           <TextField name="password" label="Contraseña" type="password" required fullWidth size="small" autoComplete="current-password" placeholder="••••••••" />
           <Button type="submit" variant="contained" fullWidth disableElevation sx={{ py: 1.2 }} disabled={loading}>
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
+          <Typography component="a" href="/forgot-password" variant="body2" color="primary" sx={{ textAlign: "right", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+            ¿Olvidaste tu contraseña?
+          </Typography>
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 4 }}>

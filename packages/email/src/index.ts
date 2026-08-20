@@ -1,8 +1,14 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM = process.env.EMAIL_FROM ?? "Apolo <noreply@apolo.app>";
+
+let resend: Resend | null = null;
+function getResend(): Resend {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 export interface SendEmailParams {
   to: string;
@@ -11,7 +17,7 @@ export interface SendEmailParams {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject,
