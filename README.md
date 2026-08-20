@@ -137,13 +137,33 @@ pnpm lint        # next lint
 pnpm build       # build de producción
 ```
 
-## OpenSpec
+## OpenSpec (SDD — Spec-Driven Development)
 
-El repo usa [OpenSpec](https://openspec.dev/) para spec-driven development.
+El repo usa [OpenSpec](https://openspec.dev/) para planificar cambios antes de escribir código.
 
-```bash
-openspec validate --specs   # valida las specs
+### Flujo de trabajo (en opencode)
+
+```
+/opsx:explore                # (opcional) pensar/discutir la idea antes de proponer
+/opsx:propose <nombre>       # genera proposal.md, design.md, tasks.md y el delta de spec
+  └─ revisá y ajustá los artefactos antes de tocar código
+/opsx:apply                  # implementa las tasks
+/opsx:archive                # mergea el delta en specs/ y archiva el cambio
 ```
 
-Comandos en opencode: `/opsx:explore`, `/opsx:propose`, `/opsx:apply`, `/opsx:archive`.
-Las specs viven en `openspec/specs/` y los cambios propuestos en `openspec/changes/`.
+- **`openspec/specs/`**: fuente de verdad del comportamiento (una spec por capacidad: `auth-login`, `tenancy`, ...).
+- **`openspec/changes/`**: cambios propuestos (uno por carpeta); al archivar pasan a `changes/archive/`.
+
+### Comandos CLI
+
+```bash
+openspec validate --specs    # valida las specs
+openspec list                # lista cambios activos
+openspec show <cambio>       # detalle de un cambio
+openspec view                # dashboard interactivo
+```
+
+### Convención de commits
+
+Commits siguen [Conventional Commits](https://github.com/conventional-changelog/commitlint):
+`tipo(scope): descripción` con `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, etc.

@@ -34,21 +34,29 @@ El sistema SHALL permitir crear una cuenta con nombre, email y contraseña.
 
 ### Requirement: Inicio de sesión
 
-El sistema SHALL autenticar usuarios con email y contraseña.
+El sistema SHALL autenticar usuarios con email y contraseña mediante el helper
+`signIn` de `next-auth/react`, que gestiona el token CSRF automáticamente.
 
 #### Scenario: Credenciales válidas
 
 - GIVEN un usuario registrado y activo
 - WHEN envía email y contraseña correctos en `/login`
 - THEN se emite una sesión (`authjs.session-token`)
-- AND el usuario es redirigido al dashboard
+- AND el usuario es redirigido a `/dashboard`
 
 #### Scenario: Contraseña incorrecta
 
 - GIVEN un usuario registrado
 - WHEN envía una contraseña incorrecta
 - THEN la autenticación falla (`CredentialsSignin`)
+- AND se muestra el mensaje inline "Email o contraseña incorrectos"
 - AND no se crea sesión
+
+#### Scenario: Cuenta recién creada
+
+- GIVEN un usuario que acaba de registrarse
+- WHEN llega a `/login?registered=1`
+- THEN se muestra el mensaje "Cuenta creada. Ya podés iniciar sesión."
 
 #### Scenario: Usuario inactivo
 
