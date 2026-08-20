@@ -2,6 +2,8 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const FROM = process.env.EMAIL_FROM ?? "Apolo <noreply@apolo.app>";
+
 export interface SendEmailParams {
   to: string;
   subject: string;
@@ -10,7 +12,7 @@ export interface SendEmailParams {
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   return resend.emails.send({
-    from: "Apolo <noreply@apolo.app>",
+    from: FROM,
     to,
     subject,
     html,
