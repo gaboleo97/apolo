@@ -8,7 +8,7 @@ tenants y ver y editar todos los usuarios, incluyendo su tenant, rol y módulos.
 
 ### Requirement: Gestión global de tenants
 
-El sistema SHALL permitir al `super_admin` listar y crear tenants.
+El sistema SHALL permitir al `super_admin` listar, crear y editar tenants.
 
 #### Scenario: Listar tenants
 
@@ -21,6 +21,12 @@ El sistema SHALL permitir al `super_admin` listar y crear tenants.
 - GIVEN un usuario con rol `super_admin`
 - WHEN crea un tenant con nombre, país y plan
 - THEN se genera un slug único y el tenant queda activo
+
+#### Scenario: Editar país y plan
+
+- GIVEN un usuario con rol `super_admin`
+- WHEN edita un tenant cambiando su país o su plan
+- THEN el tenant queda actualizado con el nuevo país o plan
 
 ### Requirement: Gestión global de usuarios
 

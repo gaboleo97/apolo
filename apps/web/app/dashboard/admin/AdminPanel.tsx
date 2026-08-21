@@ -107,6 +107,20 @@ export default function AdminPanel() {
     load();
   }
 
+  async function handleSaveTenant(t: Tenant) {
+    setError(null);
+    const res = await fetch(`/api/admin/tenants/${t.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ country: t.country, plan: t.plan }),
+    });
+    if (!res.ok) {
+      setError("No se pudo guardar el tenant");
+      return;
+    }
+    load();
+  }
+
   return (
     <Box>
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
@@ -161,8 +175,35 @@ export default function AdminPanel() {
                   <TableRow key={t.id}>
                     <TableCell>{t.name}</TableCell>
                     <TableCell>{t.slug}</TableCell>
-                    <TableCell>{t.country}</TableCell>
-                    <TableCell>{t.plan}</TableCell>
+                    <TableCell>
+                      <FormControl size="small" sx={{ minWidth: 90 }}>
+                        <InputLabel>País</InputLabel>
+                        <Select
+                          label="País"
+                          value={t.country}
+                          onChange={(e) => setTenants((prev) => prev.map((x) => (x.id === t.id ? { ...x, country: e.target.value } : x)))}
+                        >
+                          {["AR", "MX", "CO", "CL", "PE", "US"].map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                    </TableCell>
+                    <TableCell>
+                      <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <InputLabel>Plan</InputLabel>
+                        <Select
+                          label="Plan"
+                          value={t.plan}
+                          onChange={(e) => setTenants((prev) => prev.map((x) => (x.id === t.id ? { ...x, plan: e.target.value } : x)))}
+                        >
+                          {["freemium", "starter", "business", "enterprise"].map((p) => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="outlined" size="small" onClick={() => handleSaveTenant(t)}>
+                        Guardar
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

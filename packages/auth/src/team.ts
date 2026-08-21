@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { and, eq } from "drizzle-orm";
-import { db, users } from "@apolo/database";
-import type { ModuleKey, UserRole } from "@apolo/core";
+import { db, users, tenants } from "@apolo/database";
+import type { CountryCode, ModuleKey, TenantPlan, UserRole } from "@apolo/core";
 
 export async function createTeamUser(input: {
   tenantId: string;
@@ -96,5 +96,39 @@ export async function adminUpdateUser(input: {
     name: user.name,
     tenantId: user.tenantId,
     isActive: user.isActive,
+  };
+}
+
+export async function adminUpdateTenant(input: {
+  tenantId: string;
+  name?: string;
+  country?: CountryCode;
+  plan?: TenantPlan;
+  isActive?: boolean;
+  modulesEnabled?: string[];
+}) {
+  const updated = await db
+    .update(tenants)
+    .set({
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.country !== undefined ? { country: input.country } : {}),
+      ...(input.plan !== undefined ? { plan: input.plan } : {}),
+      ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      ...(input.modulesEnabled !== undefined ? { modulesEnabled: input.modulesEnabled } : {}),
+    })
+    .where(eq(tenants.id, input.tenantId))
+    .returning();
+
+  const tenant = updated[0];
+  if (!tenant) return null;
+
+  return {
+    id: tenant.id,
+    name: tenant.name,
+    slug: tenant.slug,
+    country: tenant.country,
+    plan: tenant.plan,
+    modulesEnabled: tenant.modulesEnabled,
+    isActive: tenant.isActive,
   };
 }
