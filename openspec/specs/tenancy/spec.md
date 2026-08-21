@@ -11,17 +11,17 @@ usuario pertenece a un tenant con un rol que determina su nivel de acceso.
 
 El sistema SHALL agrupar usuarios, datos y módulos por `tenant`.
 
-#### Scenario: Tenant creado al registrarse
+#### Scenario: Tenant creado por el super_admin
 
-- GIVEN un visitante que completa el registro
-- WHEN la cuenta se crea
-- THEN se crea un `tenant` con plan `freemium` y el módulo `inventory` habilitado
-- AND el usuario queda asociado a ese tenant
+- GIVEN un usuario con rol `super_admin`
+- WHEN crea un tenant
+- THEN el tenant queda activo con su plan, país y slug
+- AND los usuarios se asocian a ese tenant al registrarse con su código
 
 #### Scenario: Slug único
 
 - GIVEN un tenant nuevo
-- THEN su `slug` es único y derivado del nombre (con sufijo aleatorio)
+- THEN su `slug` es único; el super_admin puede definirlo (código limpio) o se genera automáticamente
 
 ### Requirement: Roles de usuario
 
@@ -31,7 +31,7 @@ El sistema SHALL asignar a cada usuario uno de los siguientes roles:
 #### Scenario: Rol al registrarse
 
 - GIVEN un usuario que se registra
-- THEN su rol es `tenant_admin`
+- THEN su rol es `viewer` (solo lectura), salvo que entre por una invitación con rol pre-asignado
 
 #### Scenario: Rol por defecto
 

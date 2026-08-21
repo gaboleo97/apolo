@@ -28,6 +28,12 @@ El sistema SHALL permitir al `super_admin` listar, crear y editar tenants.
 - WHEN edita un tenant cambiando su país o su plan
 - THEN el tenant queda actualizado con el nuevo país o plan
 
+#### Scenario: Definir el código (slug)
+
+- GIVEN un usuario con rol `super_admin`
+- WHEN crea o edita un tenant definiendo su slug
+- THEN el slug queda guardado y es único
+
 ### Requirement: Gestión global de usuarios
 
 El sistema SHALL permitir al `super_admin` listar y editar todos los usuarios de la plataforma.
@@ -49,6 +55,12 @@ El sistema SHALL permitir al `super_admin` listar y editar todos los usuarios de
 - GIVEN un usuario con rol `super_admin`
 - WHEN asigna el rol `super_admin` a otro usuario
 - THEN ese usuario obtiene el rol `super_admin`
+
+#### Scenario: Crear el admin de un tenant
+
+- GIVEN un usuario con rol `super_admin`
+- WHEN crea un usuario en un tenant con rol `tenant_admin`
+- THEN el usuario queda creado con ese rol en el tenant elegido
 
 ### Requirement: Acceso restringido al super_admin
 

@@ -32,10 +32,13 @@ export async function GET() {
   });
 }
 
+const slugRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
 const createSchema = z.object({
   name: z.string().min(2).max(120),
   country: z.enum(["AR", "MX", "CO", "CL", "PE", "US"]),
   plan: z.enum(["freemium", "starter", "business", "enterprise"]).default("freemium"),
+  slug: z.string().min(1).max(60).regex(slugRegex).optional(),
 });
 
 export async function POST(req: Request) {
@@ -47,7 +50,16 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
 
   const name = parsed.data.name.trim();
-  const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32)}-${Math.random().toString(36).slice(2, 8)}`;
+  const slug =
+    parsed.data.slug ??
+    `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32)}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const existingSlug = await db.query.tenants.findFirst({
+    where: (t, { eq }) => eq(t.slug, slug),
+  });
+  if (existingSlug) {
+    return NextResponse.json({ error: "Ese código ya está en uso" }, { status: 409 });
+  }
 
   const created = await db
     .insert(tenants)

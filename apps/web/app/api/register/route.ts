@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { registerUser } from "@apolo/auth";
+import { registerViewerUser } from "@apolo/auth";
 import { sendWelcomeEmail } from "@apolo/email";
 
 const registerSchema = z.object({
+  slug: z.string().min(1).max(60),
   name: z.string().min(2).max(80),
   email: z.string().email(),
   password: z.string().min(6).max(128),
-  country: z.enum(["AR", "MX", "CO", "CL", "PE", "US"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const user = await registerUser(parsed.data);
+    const user = await registerViewerUser(parsed.data);
 
     try {
       await sendWelcomeEmail(parsed.data.email, parsed.data.name);
@@ -28,7 +28,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, user }, { status: 201 });
   } catch (err) {
-    if ((err as { code?: string }).code === "EMAIL_TAKEN") {
+    const code = (err as { code?: string }).code;
+    if (code === "TENANT_NOT_FOUND") {
+      return NextResponse.json({ error: "Empresa no encontrada. Verificá el código." }, { status: 404 });
+    }
+    if (code === "EMAIL_TAKEN") {
       return NextResponse.json({ error: "El email ya está registrado" }, { status: 409 });
     }
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

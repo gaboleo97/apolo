@@ -64,8 +64,16 @@ export default function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [country, setCountry] = useState("AR");
   const [plan, setPlan] = useState("freemium");
+
+  const [uName, setUName] = useState("");
+  const [uEmail, setUEmail] = useState("");
+  const [uPassword, setUPassword] = useState("");
+  const [uTenantId, setUTenantId] = useState("");
+  const [uRole, setURole] = useState("tenant_admin");
+  const [uModules, setUModules] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const [tRes, uRes] = await Promise.all([fetch("/api/admin/tenants"), fetch("/api/admin/users")]);
@@ -83,13 +91,42 @@ export default function AdminPanel() {
     const res = await fetch("/api/admin/tenants", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, country, plan }),
+      body: JSON.stringify({ name, country, plan, slug: slug.trim() || undefined }),
     });
     if (!res.ok) {
-      setError("No se pudo crear el tenant");
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "No se pudo crear el tenant");
       return;
     }
     setName("");
+    setSlug("");
+    load();
+  }
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const res = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantId: uTenantId,
+        name: uName,
+        email: uEmail,
+        password: uPassword,
+        role: uRole,
+        modules: uModules,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "No se pudo crear el usuario");
+      return;
+    }
+    setUName("");
+    setUEmail("");
+    setUPassword("");
+    setUModules([]);
     load();
   }
 
@@ -112,7 +149,7 @@ export default function AdminPanel() {
     const res = await fetch(`/api/admin/tenants/${t.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: t.name, country: t.country, plan: t.plan }),
+      body: JSON.stringify({ name: t.name, slug: t.slug, country: t.country, plan: t.plan }),
     });
     if (!res.ok) {
       setError("No se pudo guardar el tenant");
@@ -143,6 +180,7 @@ export default function AdminPanel() {
             <Typography variant="h6" sx={{ mb: 2 }}>Nuevo tenant</Typography>
             <Box component="form" onSubmit={handleCreateTenant} sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
               <TextField label="Nombre" value={name} onChange={(e) => setName(e.target.value)} required size="small" sx={{ flex: 1, minWidth: 200 }} />
+              <TextField label="Código (slug)" value={slug} onChange={(e) => setSlug(e.target.value)} size="small" sx={{ minWidth: 160 }} placeholder="ej. fuzion" helperText="Opcional; si lo dejás vacío se genera" />
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <InputLabel>País</InputLabel>
                 <Select label="País" value={country} onChange={(e) => setCountry(e.target.value)}>
@@ -181,7 +219,14 @@ export default function AdminPanel() {
                         sx={{ minWidth: 140 }}
                       />
                     </TableCell>
-                    <TableCell>{t.slug}</TableCell>
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        value={t.slug}
+                        onChange={(e) => setTenants((prev) => prev.map((x) => (x.id === t.id ? { ...x, slug: e.target.value } : x)))}
+                        sx={{ minWidth: 120 }}
+                      />
+                    </TableCell>
                     <TableCell>
                       <FormControl size="small" sx={{ minWidth: 90 }}>
                         <InputLabel>País</InputLabel>
@@ -220,8 +265,50 @@ export default function AdminPanel() {
       )}
 
       {tab === 1 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Usuarios ({users.length})</Typography>
+        <Box>
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Crear usuario</Typography>
+            <Box component="form" onSubmit={handleCreateUser} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <FormControl size="small" sx={{ minWidth: 180 }}>
+                  <InputLabel>Tenant</InputLabel>
+                  <Select label="Tenant" value={uTenantId} onChange={(e) => setUTenantId(e.target.value)} required>
+                    {tenants.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <TextField label="Nombre" value={uName} onChange={(e) => setUName(e.target.value)} required size="small" sx={{ flex: 1, minWidth: 180 }} />
+                <TextField label="Email" type="email" value={uEmail} onChange={(e) => setUEmail(e.target.value)} required size="small" sx={{ flex: 1, minWidth: 200 }} />
+                <TextField label="Contraseña" type="password" value={uPassword} onChange={(e) => setUPassword(e.target.value)} required size="small" sx={{ flex: 1, minWidth: 160 }} />
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                  <InputLabel>Rol</InputLabel>
+                  <Select label="Rol" value={uRole} onChange={(e) => setURole(e.target.value)}>
+                    {ROLES.map((r) => <MenuItem key={r} value={r}>{roleLabels[r]}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {ALL_MODULES.map((m) => (
+                  <FormControlLabel
+                    key={m}
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={uModules.includes(m)}
+                        onChange={() => setUModules((prev) => toggle(prev, m))}
+                      />
+                    }
+                    label={moduleLabels[m]}
+                  />
+                ))}
+              </Box>
+              <Box>
+                <Button type="submit" variant="contained" disableElevation>Crear usuario</Button>
+              </Box>
+            </Box>
+          </Paper>
+
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Usuarios ({users.length})</Typography>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -302,7 +389,8 @@ export default function AdminPanel() {
               ))}
             </TableBody>
           </Table>
-        </Paper>
+          </Paper>
+        </Box>
       )}
     </Box>
   );

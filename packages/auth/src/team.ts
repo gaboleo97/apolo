@@ -102,6 +102,7 @@ export async function adminUpdateUser(input: {
 export async function adminUpdateTenant(input: {
   tenantId: string;
   name?: string;
+  slug?: string;
   country?: CountryCode;
   plan?: TenantPlan;
   isActive?: boolean;
@@ -111,6 +112,7 @@ export async function adminUpdateTenant(input: {
     .update(tenants)
     .set({
       ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.slug !== undefined ? { slug: input.slug } : {}),
       ...(input.country !== undefined ? { country: input.country } : {}),
       ...(input.plan !== undefined ? { plan: input.plan } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),

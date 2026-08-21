@@ -18,7 +18,25 @@ function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [slug, setSlug] = useState("");
+  const [tenantName, setTenantName] = useState<string | null>(null);
+  const [slugError, setSlugError] = useState<string | null>(null);
+
   const isInvite = Boolean(invite);
+
+  async function lookupSlug(value: string) {
+    const v = value.trim();
+    setTenantName(null);
+    setSlugError(null);
+    if (!v) return;
+    const res = await fetch(`/api/tenants/lookup?slug=${encodeURIComponent(v)}`);
+    if (res.ok) {
+      const data = await res.json();
+      setTenantName(data.name);
+    } else {
+      setSlugError("Empresa no encontrada");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,7 +53,7 @@ function RegisterForm() {
     const res = await fetch(isInvite ? "/api/register/join" : "/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(isInvite ? { ...payload, token: invite } : payload),
+      body: JSON.stringify(isInvite ? { ...payload, token: invite } : { ...payload, slug: form.get("slug") }),
     });
 
     if (res.ok) {
@@ -69,17 +87,32 @@ function RegisterForm() {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {isInvite
               ? "Te invitaron a formar parte de una empresa en Apolo"
-              : "Comenzá con tu prueba gratuita"}
+              : "Ingresá el código de tu empresa para unirte"}
           </Typography>
         </Box>
 
         <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           {error && <Alert severity="error">{error}</Alert>}
+          {!isInvite && (
+            <TextField
+              label="Código de empresa"
+              name="slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              onBlur={(e) => lookupSlug(e.target.value)}
+              required
+              fullWidth
+              size="small"
+              placeholder="ej. fuzion"
+              error={Boolean(slugError)}
+              helperText={slugError ?? (tenantName ? `Empresa: ${tenantName}` : undefined)}
+            />
+          )}
           <TextField label="Nombre" name="name" type="text" required fullWidth size="small" placeholder="Tu nombre" />
           <TextField label="Email" name="email" type="email" required fullWidth size="small" placeholder="tu@email.com" />
           <TextField label="Contraseña" name="password" type="password" required fullWidth size="small" placeholder="••••••••" />
           <Button type="submit" variant="contained" fullWidth disableElevation sx={{ py: 1.2 }} disabled={loading}>
-            {loading ? "Creando cuenta..." : isInvite ? "Unirme a la empresa" : "Crear cuenta gratis"}
+            {loading ? "Creando cuenta..." : isInvite ? "Unirme a la empresa" : "Crear cuenta"}
           </Button>
         </Box>
 

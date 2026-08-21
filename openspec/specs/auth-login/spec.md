@@ -9,16 +9,21 @@ de cuentas (tenant + usuario) y sesiones persistentes.
 
 ### Requirement: Registro de cuenta
 
-El sistema SHALL permitir crear una cuenta con nombre, email y contraseña.
+El sistema SHALL permitir crear una cuenta uniéndose a un tenant existente mediante su código (slug).
 
 #### Scenario: Alta exitosa
 
 - GIVEN un visitante en `/register`
-- WHEN envía nombre, email y contraseña válidos (mínimo 6 caracteres)
-- THEN se crea un tenant `freemium` con el módulo `inventory` habilitado
-- AND se crea un usuario con rol `tenant_admin`
+- WHEN envía un código de empresa válido, nombre, email y contraseña (mínimo 6 caracteres)
+- THEN se crea el usuario en el tenant correspondiente con rol `viewer` (sin módulos)
 - AND se guarda la contraseña hasheada con bcrypt (10 rondas)
 - AND el sistema redirige a `/login`
+
+#### Scenario: Empresa inexistente
+
+- GIVEN un código de empresa que no existe o un tenant inactivo
+- WHEN el visitante intenta registrarse
+- THEN la API responde `404` y no se crea ninguna cuenta
 
 #### Scenario: Email duplicado
 
@@ -99,4 +104,4 @@ El sistema SHALL permitir registrarse uniéndose a un tenant existente mediante 
 
 - GIVEN un visitante sin enlace de invitación
 - WHEN se registra
-- THEN se crea una empresa nueva y el usuario queda como `tenant_admin`
+- THEN se une al tenant indicado por su código y queda como `viewer`
