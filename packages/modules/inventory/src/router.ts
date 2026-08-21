@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@apolo/core";
+import { createTRPCRouter, protectedProcedure } from "@apolo/core/src/trpc";
 import { products, categories, stockMovements } from "./schema";
 import { eq, like, and, desc, sql } from "drizzle-orm";
 import type { DB } from "@apolo/database";
