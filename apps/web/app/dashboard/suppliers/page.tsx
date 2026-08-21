@@ -1,7 +1,7 @@
 import { requireModule } from "../access";
-import ModulePlaceholder from "../_components/ModulePlaceholder";
+import SuppliersModule from "./SuppliersModule";
 
 export default async function SuppliersPage() {
   await requireModule("suppliers");
-  return <ModulePlaceholder title="Proveedores" description="Gestión de proveedores y pagos." />;
+  return <SuppliersModule />;
 }

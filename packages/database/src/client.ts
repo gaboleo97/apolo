@@ -2,10 +2,13 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as coreSchema from "./schema/core";
 import * as inventorySchema from "./schema/inventory";
+import * as suppliersSchema from "./schema/suppliers";
 
 const connectionString = process.env.DATABASE_URL!;
 
 const client = postgres(connectionString, { prepare: false });
 
-export const db = drizzle(client, { schema: { ...coreSchema, ...inventorySchema } });
+export const db = drizzle(client, {
+  schema: { ...coreSchema, ...inventorySchema, ...suppliersSchema },
+});
 export type DB = typeof db;

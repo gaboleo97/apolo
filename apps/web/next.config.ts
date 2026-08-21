@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
     "@apolo/ui",
     "@apolo/email",
     "@apolo/module-inventory",
+    "@apolo/module-suppliers",
   ],
   async headers() {
     return [

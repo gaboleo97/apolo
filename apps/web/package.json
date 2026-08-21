@@ -15,6 +15,7 @@
     "@apolo/database": "workspace:*",
     "@apolo/email": "workspace:*",
     "@apolo/module-inventory": "workspace:*",
+    "@apolo/module-suppliers": "workspace:*",
     "@apolo/ui": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",

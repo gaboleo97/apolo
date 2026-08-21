@@ -1,0 +1,21 @@
+{
+  "name": "@apolo/module-suppliers",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo node_modules"
+  },
+  "dependencies": {
+    "@apolo/database": "workspace:*",
+    "drizzle-orm": "^0.40.0"
+  },
+  "devDependencies": {
+    "@apolo/module-inventory": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.11"
+  }
+}
