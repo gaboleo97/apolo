@@ -255,7 +255,20 @@ export async function upsertSuppliers(tenantId: string, rows: SupplierImportRow[
 
       const existing = await findSupplierByName(tenantId, nombre);
       if (existing) {
-        await db.update(suppliers).set(values).where(eq(suppliers.id, existing.id));
+        // solo actualiza los campos presentes y no vacíos en el CSV
+        await db
+          .update(suppliers)
+          .set({
+            name: nombre,
+            ...(row.cuit?.trim() ? { taxId: row.cuit.trim() } : {}),
+            ...(row.telefono?.trim() ? { phone: row.telefono.trim() } : {}),
+            ...(row.email?.trim() ? { email: row.email.trim() } : {}),
+            ...(row.direccion?.trim() ? { address: row.direccion.trim() } : {}),
+            ...(row.contacto?.trim() ? { contactName: row.contacto.trim() } : {}),
+            ...(row.notas?.trim() ? { notes: row.notas.trim() } : {}),
+            ...(row.activo?.trim() ? { isActive: parseBool(row.activo) } : {}),
+          })
+          .where(eq(suppliers.id, existing.id));
         report.updated++;
       } else {
         await db.insert(suppliers).values({ tenantId, ...values });

@@ -85,6 +85,7 @@ El sistema SHALL permitir exportar e importar proveedores en CSV.
 - GIVEN un CSV con un proveedor cuyo nombre ya existe
 - WHEN se sube
 - THEN el existente se actualiza en vez de duplicarse
+- AND los campos vacíos o ausentes en el CSV conservan su valor actual
 
 #### Scenario: Reporte de importación
 

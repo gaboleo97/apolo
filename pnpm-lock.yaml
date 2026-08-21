@@ -35,6 +35,9 @@ importers:
       '@apolo/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@apolo/module-clients':
+        specifier: workspace:*
+        version: link:../../packages/modules/clients
       '@apolo/module-inventory':
         specifier: workspace:*
         version: link:../../packages/modules/inventory
@@ -256,6 +259,25 @@ importers:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+
+  packages/modules/clients:
+    dependencies:
+      '@apolo/database':
+        specifier: workspace:*
+        version: link:../../database
+      drizzle-orm:
+        specifier: ^0.40.0
+        version: 0.40.1(gel@2.2.0)(postgres@3.4.9)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@types/node@22.19.21)(vite@8.2.2(@types/node@22.19.21))
 
   packages/modules/inventory:
     dependencies:

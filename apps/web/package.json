@@ -14,6 +14,7 @@
     "@apolo/core": "workspace:*",
     "@apolo/database": "workspace:*",
     "@apolo/email": "workspace:*",
+    "@apolo/module-clients": "workspace:*",
     "@apolo/module-inventory": "workspace:*",
     "@apolo/module-suppliers": "workspace:*",
     "@apolo/ui": "workspace:*",
