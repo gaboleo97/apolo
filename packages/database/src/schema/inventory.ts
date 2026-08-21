@@ -21,7 +21,7 @@ export const products = pgTable("products", {
   description: text("description"),
   sku: text("sku"),
   barcode: text("barcode"),
-  unitType: text("unit_type", { enum: ["unit", "kg", "lt", "m", "box", "pack"] }).default("unit"),
+  unitType: text("unit_type", { enum: ["unit", "kg", "lt", "m", "box", "pack", "bulk"] }).default("unit"),
   price: numeric("price", { precision: 12, scale: 2 }).notNull(),
   costPerBulk: numeric("cost", { precision: 12, scale: 2 }),
   unitsPerBulk: numeric("units_per_bulk", { precision: 12, scale: 2 }).default("1"),

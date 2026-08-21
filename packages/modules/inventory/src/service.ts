@@ -1,7 +1,7 @@
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { db, categories, products, stockMovements } from "@apolo/database";
 
-export type UnitType = "unit" | "kg" | "lt" | "m" | "box" | "pack";
+export type UnitType = "unit" | "kg" | "lt" | "m" | "box" | "pack" | "bulk";
 
 export type ProductInput = {
   name: string;
@@ -255,8 +255,9 @@ const unitMap: Record<string, UnitType> = {
   kg: "kg", kilogramo: "kg", kilos: "kg", kilo: "kg",
   lt: "lt", l: "lt", litro: "lt", litros: "lt",
   m: "m", metro: "m", metros: "m",
-  box: "box", caja: "box", cajas: "box", bulto: "box", bultos: "box",
+  box: "box", caja: "box", cajas: "box",
   pack: "pack", paquete: "pack",
+  bulk: "bulk", bulto: "bulk", bultos: "bulk",
 };
 
 function normalizeUnit(v?: string): UnitType {

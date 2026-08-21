@@ -13,7 +13,7 @@ const updateSchema = z.object({
   taxRate: z.number().min(0).optional(),
   sku: z.string().max(80).nullable().optional(),
   barcode: z.string().max(80).nullable().optional(),
-  unitType: z.enum(["unit", "kg", "lt", "m", "box", "pack"]).optional(),
+  unitType: z.enum(["unit", "kg", "lt", "m", "box", "pack", "bulk"]).optional(),
   minStock: z.number().min(0).optional(),
   description: z.string().max(500).nullable().optional(),
   isActive: z.boolean().optional(),

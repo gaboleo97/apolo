@@ -33,6 +33,7 @@ const unitLabels: Record<string, string> = {
   m: "Metro",
   box: "Caja",
   pack: "Pack",
+  bulk: "Bulto",
 };
 
 const stockTypeLabels: Record<string, string> = {
@@ -137,6 +138,7 @@ export default function InventoryModule() {
     unit: "Unidades por bulto",
     box: "Unidades por caja",
     pack: "Unidades por pack",
+    bulk: "Kilos por bulto",
   };
   const bulkLabelText = bulkLabel[form.unitType] ?? "Cantidad por bulto";
 
@@ -657,7 +659,7 @@ export default function InventoryModule() {
             {formCostUnit != null && (
               <Box sx={{ bgcolor: "background.default", p: 1.5, borderRadius: 1 }}>
                 <Typography variant="body2">
-                  Costo por {form.unitType === "kg" ? "kilo" : form.unitType === "lt" ? "litro" : form.unitType === "m" ? "metro" : "unidad"}:{" "}
+                  Costo por {form.unitType === "kg" || form.unitType === "bulk" ? "kilo" : form.unitType === "lt" ? "litro" : form.unitType === "m" ? "metro" : "unidad"}:{" "}
                   <strong>${formCostUnit.toFixed(2)}</strong>
                   {" · "}
                   Precio sugerido: <strong>${formSuggested?.toFixed(2) ?? "—"}</strong>
