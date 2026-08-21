@@ -25,6 +25,21 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import Divider from "@mui/material/Divider";
+import { useSession } from "next-auth/react";
+
+const roundingLabels: Record<string, string> = {
+  none: "Sin redondeo (precio exacto)",
+  "10": "Múltiplos de $10",
+  "50": "Múltiplos de $50",
+  "100": "Múltiplos de $100",
+};
+
+function roundPrice(v: number, r: string): number {
+  if (r === "none") return Math.round(v * 100) / 100;
+  const step = Number(r);
+  return Math.round(v / step) * step;
+}
 
 const unitLabels: Record<string, string> = {
   unit: "Unidad",
@@ -88,11 +103,14 @@ const emptyForm = {
 };
 
 export default function InventoryModule() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "tenant_admin" || session?.user?.role === "super_admin";
   const [tab, setTab] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [snack, setSnack] = useState<{ msg: string; sev: "success" | "error" } | null>(null);
+  const [priceRounding, setPriceRounding] = useState("none");
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -127,9 +145,33 @@ export default function InventoryModule() {
   const formUnits = Number(form.unitsPerBulk) || 1;
   const formTax = Number(form.taxRate) || 0;
   const formMargin = Number(form.marginPct) || 0;
-  const formCostUnit = formCostBulk != null ? formCostBulk / formUnits : null;
-  const formSuggested =
-    formCostUnit != null ? formCostUnit * (1 + formTax / 100) * (1 + formMargin / 100) : null;
+  const stepCostUnit = formCostBulk != null ? formCostBulk / formUnits : null;
+  const stepTax = stepCostUnit != null ? stepCostUnit * (1 + formTax / 100) : null;
+  const stepMargin = stepTax != null ? stepTax * (1 + formMargin / 100) : null;
+  const formSuggested = stepMargin != null ? roundPrice(stepMargin, priceRounding) : null;
+  const unitShort = form.unitType === "lt" ? "litro" : form.unitType === "m" ? "metro" : form.unitType === "unit" ? "unidad" : "kilo";
+
+  const loadSettings = useCallback(async () => {
+    const res = await fetch("/api/inventory/settings");
+    if (res.ok) {
+      const data = await res.json();
+      setPriceRounding(data.priceRounding ?? "none");
+    }
+  }, []);
+
+  async function handleSaveSettings() {
+    const res = await fetch("/api/inventory/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priceRounding }),
+    });
+    if (res.ok) {
+      notify("Configuración guardada", "success");
+      loadProducts();
+    } else {
+      notify("No se pudo guardar", "error");
+    }
+  }
 
   const bulkLabel: Record<string, string> = {
     kg: "Kilos por bulto",
@@ -166,6 +208,10 @@ export default function InventoryModule() {
     loadProducts();
     loadMovements();
   }, [loadProducts, loadMovements]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   function openCreate() {
     setEditing(null);
@@ -355,6 +401,7 @@ export default function InventoryModule() {
         <Tab label="Categorías" />
         <Tab label="Stock" />
         <Tab label="Carga masiva" />
+        {isAdmin && <Tab label="Configuración" />}
       </Tabs>
 
       {tab === 0 && (
@@ -620,6 +667,28 @@ export default function InventoryModule() {
         </Box>
       )}
 
+      {isAdmin && tab === 4 && (
+        <Box sx={{ maxWidth: 560 }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>Redondeo de precios</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Define cómo se redondean los precios sugeridos y los precios calculados en la carga masiva. Se aplica a toda la empresa.
+            </Typography>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Redondeo</InputLabel>
+              <Select label="Redondeo" value={priceRounding} onChange={(e) => setPriceRounding(e.target.value)}>
+                {Object.entries(roundingLabels).map(([k, v]) => (
+                  <MenuItem key={k} value={k}>{v}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button variant="contained" onClick={handleSaveSettings} disableElevation sx={{ mt: 2 }}>
+              Guardar
+            </Button>
+          </Paper>
+        </Box>
+      )}
+
       <Dialog open={openForm} onClose={() => setOpenForm(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editing ? "Editar producto" : "Nuevo producto"}</DialogTitle>
         <Box component="form" onSubmit={handleSaveProduct}>
@@ -656,21 +725,38 @@ export default function InventoryModule() {
               <TextField label="Precio de venta" size="small" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required sx={{ flex: 1 }} />
               <TextField label="Stock mínimo" size="small" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} sx={{ flex: 1 }} />
             </Box>
-            {formCostUnit != null && (
-              <Box sx={{ bgcolor: "background.default", p: 1.5, borderRadius: 1 }}>
-                <Typography variant="body2">
-                  Costo por {form.unitType === "kg" || form.unitType === "bulk" ? "kilo" : form.unitType === "lt" ? "litro" : form.unitType === "m" ? "metro" : "unidad"}:{" "}
-                  <strong>${formCostUnit.toFixed(2)}</strong>
-                  {" · "}
-                  Precio sugerido: <strong>${formSuggested?.toFixed(2) ?? "—"}</strong>
-                </Typography>
-                {formSuggested != null && (
-                  <Button size="small" variant="outlined" sx={{ mt: 0.5 }} onClick={() => setForm({ ...form, price: formSuggested.toFixed(2) })}>
-                    Usar precio sugerido
-                  </Button>
-                )}
-              </Box>
-            )}
+            <Box sx={{ bgcolor: "background.default", p: 1.5, borderRadius: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                CÓMO SE FORMA EL PRECIO
+              </Typography>
+              {[
+                {
+                  label: `Costo del bulto ${formCostBulk != null ? `$${formCostBulk.toFixed(2)}` : "(ingresá el costo)"} ÷ ${formUnits} ${unitShort}${formUnits > 1 ? "s" : ""}`,
+                  value: stepCostUnit,
+                },
+                { label: `+ IVA ${formTax}%`, value: stepTax },
+                { label: `+ Margen ${formMargin}%`, value: stepMargin },
+                {
+                  label:
+                    priceRounding === "none"
+                      ? "Precio sugerido (sin redondeo)"
+                      : `Precio sugerido (${roundingLabels[priceRounding]})`,
+                  value: formSuggested,
+                },
+              ].map((s, i) => (
+                <Box key={i} sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                  <Typography variant="body2" color={i === 3 ? "text.primary" : "text.secondary"}>
+                    {i + 1}. {s.label}
+                  </Typography>
+                  <Typography variant={i === 3 ? "subtitle2" : "body2"}>{s.value != null ? `$${s.value.toFixed(2)}` : "—"}</Typography>
+                </Box>
+              ))}
+              {formSuggested != null && (
+                <Button size="small" variant="outlined" sx={{ mt: 1 }} onClick={() => setForm({ ...form, price: formSuggested.toFixed(2) })}>
+                  Usar precio sugerido (${formSuggested.toFixed(2)})
+                </Button>
+              )}
+            </Box>
             <Box sx={{ display: "flex", gap: 2 }}>
               <TextField label="SKU (vacío = autogenerado)" size="small" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} sx={{ flex: 1 }} />
               <TextField label="Código de barras" size="small" value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} sx={{ flex: 1 }} />

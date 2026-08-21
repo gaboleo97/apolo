@@ -7,6 +7,7 @@ export const tenants = pgTable("tenants", {
   country: text("country", { enum: ["AR", "MX", "CO", "CL", "PE", "US"] }).notNull(),
   plan: text("plan", { enum: ["freemium", "starter", "business", "enterprise"] }).default("freemium"),
   modulesEnabled: jsonb("modules_enabled").$type<string[]>().default([]),
+  priceRounding: text("price_rounding", { enum: ["none", "10", "50", "100"] }).default("none"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

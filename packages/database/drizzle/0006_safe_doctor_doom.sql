@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "price_rounding" text DEFAULT 'none';

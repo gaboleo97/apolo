@@ -43,12 +43,34 @@ El sistema SHALL calcular el costo unitario y un precio sugerido a partir del co
 
 - GIVEN un producto con costo por bulto, IVA y margen de ganancia
 - THEN el precio sugerido es costo unitario × (1 + IVA/100) × (1 + margen/100)
+- AND se aplica el redondeo configurado para el tenant
 - AND el precio de venta real es editable (por defecto, el sugerido)
+
+#### Scenario: Desglose del cálculo
+
+- GIVEN un usuario cargando o editando un producto
+- THEN ve siempre el paso a paso de cómo se forma el precio: costo por bulto ÷ cantidad por bulto, más IVA, más margen y el redondeo aplicado
 
 #### Scenario: Stock decimal
 
 - GIVEN un producto vendido por kilo
 - THEN el stock soporta decimales (ej. 15.5 kg)
+
+### Requirement: Redondeo de precios
+
+El sistema SHALL permitir al administrador del tenant configurar un redondeo general para los precios calculados.
+
+#### Scenario: Configurar redondeo
+
+- GIVEN un tenant_admin
+- WHEN elige sin redondeo o múltiplos de 10, 50 o 100
+- THEN la configuración queda guardada para toda su empresa
+
+#### Scenario: Aplicar redondeo
+
+- GIVEN un tenant con redondeo a múltiplos de $10
+- WHEN se calcula un precio sugerido (manual o por carga masiva)
+- THEN el precio se ajusta al múltiplo de $10 más cercano
 
 ### Requirement: Gestión de categorías
 

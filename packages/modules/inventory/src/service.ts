@@ -1,7 +1,8 @@
 import { and, desc, eq, ilike } from "drizzle-orm";
-import { db, categories, products, stockMovements } from "@apolo/database";
+import { db, categories, products, stockMovements, tenants } from "@apolo/database";
 
 export type UnitType = "unit" | "kg" | "lt" | "m" | "box" | "pack" | "bulk";
+export type PriceRounding = "none" | "10" | "50" | "100";
 
 export type ProductInput = {
   name: string;
@@ -32,18 +33,38 @@ export function calcCostPerUnit(costPerBulk: number | null, unitsPerBulk: number
   return round2(costPerBulk / units);
 }
 
+export function applyRounding(price: number, rounding: PriceRounding): number {
+  if (rounding === "none") return round2(price);
+  const step = Number(rounding);
+  return Math.round(price / step) * step;
+}
+
 export function calcSuggestedPrice(
   costPerBulk: number | null,
   unitsPerBulk: number,
   taxRate: number,
-  marginPct: number
+  marginPct: number,
+  rounding: PriceRounding = "none"
 ): number | null {
   const costPerUnit = calcCostPerUnit(costPerBulk, unitsPerBulk);
   if (costPerUnit == null) return null;
-  return round2(costPerUnit * (1 + taxRate / 100) * (1 + marginPct / 100));
+  return applyRounding(costPerUnit * (1 + taxRate / 100) * (1 + marginPct / 100), rounding);
 }
 
-function serializeProduct(p: typeof products.$inferSelect) {
+export async function getTenantRounding(tenantId: string): Promise<PriceRounding> {
+  const t = await db.query.tenants.findFirst({ where: eq(tenants.id, tenantId) });
+  return (t?.priceRounding as PriceRounding) ?? "none";
+}
+
+export async function getPricingSettings(tenantId: string) {
+  return { priceRounding: await getTenantRounding(tenantId) };
+}
+
+export async function setTenantRounding(tenantId: string, rounding: PriceRounding) {
+  await db.update(tenants).set({ priceRounding: rounding }).where(eq(tenants.id, tenantId));
+}
+
+function serializeProduct(p: typeof products.$inferSelect, rounding: PriceRounding) {
   const costPerBulk = p.costPerBulk != null ? Number(p.costPerBulk) : null;
   const unitsPerBulk = toNum(p.unitsPerBulk) || 1;
   const marginPct = toNum(p.marginPct);
@@ -64,7 +85,7 @@ function serializeProduct(p: typeof products.$inferSelect) {
     marginPct,
     taxRate,
     costPerUnit: calcCostPerUnit(costPerBulk, unitsPerBulk),
-    suggestedPrice: calcSuggestedPrice(costPerBulk, unitsPerBulk, taxRate, marginPct),
+    suggestedPrice: calcSuggestedPrice(costPerBulk, unitsPerBulk, taxRate, marginPct, rounding),
     minStock: toNum(p.minStock),
     currentStock: toNum(p.currentStock),
     isActive: p.isActive,
@@ -76,6 +97,7 @@ export async function listProducts(
   tenantId: string,
   opts?: { search?: string; categoryId?: string }
 ) {
+  const rounding = await getTenantRounding(tenantId);
   const rows = await db.query.products.findMany({
     where: and(
       eq(products.tenantId, tenantId),
@@ -84,14 +106,15 @@ export async function listProducts(
     ),
     orderBy: desc(products.createdAt),
   });
-  return rows.map(serializeProduct);
+  return rows.map((p) => serializeProduct(p, rounding));
 }
 
 export async function getProduct(tenantId: string, productId: string) {
+  const rounding = await getTenantRounding(tenantId);
   const row = await db.query.products.findFirst({
     where: and(eq(products.id, productId), eq(products.tenantId, tenantId)),
   });
-  return row ? serializeProduct(row) : null;
+  return row ? serializeProduct(row, rounding) : null;
 }
 
 export function generateSku(name: string): string {
@@ -124,7 +147,7 @@ export async function createProduct(tenantId: string, input: ProductInput) {
     .returning();
 
   const p = created[0];
-  return p ? serializeProduct(p) : null;
+  return p ? serializeProduct(p, await getTenantRounding(tenantId)) : null;
 }
 
 export async function updateProduct(
@@ -155,7 +178,7 @@ export async function updateProduct(
     .returning();
 
   const p = updated[0];
-  return p ? serializeProduct(p) : null;
+  return p ? serializeProduct(p, await getTenantRounding(tenantId)) : null;
 }
 
 export async function listCategories(tenantId: string) {
@@ -441,6 +464,7 @@ export async function upsertPrices(
   rows: PriceImportRow[]
 ): Promise<ImportReport> {
   const report: ImportReport = { created: 0, updated: 0, errors: [] };
+  const rounding = await getTenantRounding(tenantId);
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -477,7 +501,7 @@ export async function upsertPrices(
           report.errors.push({ line, error: "Falta costo o precio" });
           continue;
         }
-        finalPrice = calcSuggestedPrice(costoBulto, unitsPerBulk, taxRate, marginPct);
+        finalPrice = calcSuggestedPrice(costoBulto, unitsPerBulk, taxRate, marginPct, rounding);
         if (finalPrice == null) {
           report.errors.push({ line, error: "No se pudo calcular el precio" });
           continue;
