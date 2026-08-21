@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Drawer from "@mui/material/Drawer";
@@ -16,6 +17,7 @@ import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
 import InputBase from "@mui/material/InputBase";
 import Divider from "@mui/material/Divider";
+import Tooltip from "@mui/material/Tooltip";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import ReceiptIcon from "@mui/icons-material/Receipt";
@@ -27,9 +29,12 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import SettingsIcon from "@mui/icons-material/Settings";
 import MenuIcon from "@mui/icons-material/Menu";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import LogoutIcon from "@mui/icons-material/Logout";
 import type { ModuleKey } from "@apolo/core";
 
 const drawerWidth = 240;
+const miniWidth = 64;
 
 const moduleMenu: { key: ModuleKey; label: string; href: string; icon: React.ReactNode }[] = [
   { key: "inventory", label: "Inventario", href: "/dashboard/inventory", icon: <InventoryIcon /> },
@@ -53,67 +58,110 @@ export default function DashboardShell({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const isTenantAdmin = role === "tenant_admin";
   const isSuperAdmin = role === "super_admin";
   const visibleModules = moduleMenu.filter((item) => modules.includes(item.key));
 
+  function renderItem(label: string, href: string, icon: React.ReactNode) {
+    return (
+      <ListItem disablePadding>
+        <ListItemButton
+          component={Link}
+          href={href}
+          sx={{
+            minHeight: 48,
+            justifyContent: collapsed ? "center" : "flex-start",
+            px: collapsed ? 1.5 : 2.5,
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: 0,
+              mr: collapsed ? 0 : 2,
+              color: "text.secondary",
+              justifyContent: "center",
+            }}
+          >
+            {icon}
+          </ListItemIcon>
+          {!collapsed && (
+            <ListItemText primary={label} slotProps={{ primary: { sx: { fontSize: 14 } } }} />
+          )}
+        </ListItemButton>
+      </ListItem>
+    );
+  }
+
   const drawer = (
-    <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 2 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          gap: 1,
+          px: collapsed ? 0 : 2,
+          py: 2,
+        }}
+      >
         <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, fontSize: 14, fontWeight: 700 }}>
           A
         </Avatar>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Apolo
-        </Typography>
+        {!collapsed && (
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            Apolo
+          </Typography>
+        )}
       </Box>
+      <Divider />
+      <List sx={{ flexGrow: 1 }}>
+        {renderItem("Dashboard", "/dashboard", <DashboardIcon />)}
+        {visibleModules.map((item) => renderItem(item.label, item.href, item.icon))}
+        {isTenantAdmin && renderItem("Equipo", "/dashboard/team", <ManageAccountsIcon />)}
+        {isSuperAdmin && renderItem("Administración", "/dashboard/admin", <SettingsIcon />)}
+      </List>
       <Divider />
       <List>
         <ListItem disablePadding>
-          <ListItemButton component={Link} href="/dashboard">
-            <ListItemIcon sx={{ minWidth: 40, color: "text.secondary" }}>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" slotProps={{ primary: { sx: { fontSize: 14 } } }} />
-          </ListItemButton>
+          <Tooltip title="Cerrar sesión" placement="right">
+            <ListItemButton
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              sx={{
+                minHeight: 48,
+                justifyContent: collapsed ? "center" : "flex-start",
+                px: collapsed ? 1.5 : 2.5,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: collapsed ? 0 : 2,
+                  color: "text.secondary",
+                  justifyContent: "center",
+                }}
+              >
+                <LogoutIcon />
+              </ListItemIcon>
+              {!collapsed && (
+                <ListItemText primary="Cerrar sesión" slotProps={{ primary: { sx: { fontSize: 14 } } }} />
+              )}
+            </ListItemButton>
+          </Tooltip>
         </ListItem>
-        {visibleModules.map((item) => (
-          <ListItem key={item.href} disablePadding>
-            <ListItemButton component={Link} href={item.href}>
-              <ListItemIcon sx={{ minWidth: 40, color: "text.secondary" }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14 } } }} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-        {isTenantAdmin && (
-          <ListItem disablePadding>
-            <ListItemButton component={Link} href="/dashboard/team">
-              <ListItemIcon sx={{ minWidth: 40, color: "text.secondary" }}>
-                <ManageAccountsIcon />
-              </ListItemIcon>
-              <ListItemText primary="Equipo" slotProps={{ primary: { sx: { fontSize: 14 } } }} />
-            </ListItemButton>
-          </ListItem>
-        )}
-        {isSuperAdmin && (
-          <ListItem disablePadding>
-            <ListItemButton component={Link} href="/dashboard/admin">
-              <ListItemIcon sx={{ minWidth: 40, color: "text.secondary" }}>
-                <SettingsIcon />
-              </ListItemIcon>
-              <ListItemText primary="Administración" slotProps={{ primary: { sx: { fontSize: 14 } } }} />
-            </ListItemButton>
-          </ListItem>
-        )}
       </List>
     </Box>
   );
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <AppBar position="fixed" sx={{ width: { md: `calc(100% - ${drawerWidth}px)` }, ml: { md: `${drawerWidth}px` } }}>
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { md: `calc(100% - ${collapsed ? miniWidth : drawerWidth}px)` },
+          ml: { md: `${collapsed ? miniWidth : drawerWidth}px` },
+        }}
+      >
         <Toolbar>
           <IconButton
             color="inherit"
@@ -122,6 +170,14 @@ export default function DashboardShell({
             sx={{ mr: 2, display: { md: "none" } }}
           >
             <MenuIcon />
+          </IconButton>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={() => setCollapsed(!collapsed)}
+            sx={{ mr: 2, display: { xs: "none", md: "inline-flex" } }}
+          >
+            {collapsed ? <MenuIcon /> : <ChevronLeftIcon />}
           </IconButton>
           <Box
             component="form"
@@ -145,6 +201,11 @@ export default function DashboardShell({
             <Typography variant="body2" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
               {userName ?? "Usuario"}
             </Typography>
+            <Tooltip title="Cerrar sesión">
+              <IconButton color="inherit" onClick={() => signOut({ callbackUrl: "/login" })}>
+                <LogoutIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Toolbar>
       </AppBar>
@@ -155,7 +216,7 @@ export default function DashboardShell({
         onClose={() => setMobileOpen(false)}
         sx={{
           display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": { width: drawerWidth },
+          "& .MuiDrawer-paper": { width: drawerWidth, boxSizing: "border-box" },
         }}
       >
         {drawer}
@@ -165,7 +226,12 @@ export default function DashboardShell({
         variant="permanent"
         sx={{
           display: { xs: "none", md: "block" },
-          "& .MuiDrawer-paper": { width: drawerWidth },
+          "& .MuiDrawer-paper": {
+            width: collapsed ? miniWidth : drawerWidth,
+            overflowX: "hidden",
+            transition: "width 0.2s",
+            boxSizing: "border-box",
+          },
         }}
         open
       >
