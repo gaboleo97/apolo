@@ -313,6 +313,7 @@ export type ProductImportRow = {
   sku?: string;
   codigo_barras?: string;
   unidad?: string;
+  cantidad_por_bulto?: string;
   unidades_por_bulto?: string;
   stock_minimo?: string;
   stock?: string;
@@ -340,7 +341,7 @@ export async function upsertProducts(
       }
 
       const unidad = normalizeUnit(row.unidad);
-      const unitsPerBulk = parseNumber(row.unidades_por_bulto) ?? 1;
+      const unitsPerBulk = parseNumber(row.cantidad_por_bulto ?? row.unidades_por_bulto) ?? 1;
       const stockMinimo = parseNumber(row.stock_minimo) ?? 0;
       const stock = parseNumber(row.stock);
       const activo = parseBool(row.activo);

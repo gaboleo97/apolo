@@ -19,7 +19,7 @@ export async function GET() {
     sku: p.sku ?? "",
     codigo_barras: p.barcode ?? "",
     unidad: p.unitType ?? "unidad",
-    unidades_por_bulto: String(p.unitsPerBulk ?? 1),
+    cantidad_por_bulto: String(p.unitsPerBulk ?? 1),
     stock_minimo: String(p.minStock ?? 0),
     stock: String(p.currentStock ?? 0),
     descripcion: p.description ?? "",

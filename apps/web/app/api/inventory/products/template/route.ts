@@ -13,7 +13,7 @@ export async function GET() {
       sku: "PAPA-001",
       codigo_barras: "",
       unidad: "kg",
-      unidades_por_bulto: "20",
+      cantidad_por_bulto: "20",
       stock_minimo: "50",
       stock: "100",
       descripcion: "Papa blanca por kilo",

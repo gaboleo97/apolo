@@ -130,6 +130,16 @@ export default function InventoryModule() {
   const formSuggested =
     formCostUnit != null ? formCostUnit * (1 + formTax / 100) * (1 + formMargin / 100) : null;
 
+  const bulkLabel: Record<string, string> = {
+    kg: "Kilos por bulto",
+    lt: "Litros por bulto",
+    m: "Metros por bulto",
+    unit: "Unidades por bulto",
+    box: "Unidades por caja",
+    pack: "Unidades por pack",
+  };
+  const bulkLabelText = bulkLabel[form.unitType] ?? "Cantidad por bulto";
+
   const loadProducts = useCallback(async () => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -521,7 +531,7 @@ export default function InventoryModule() {
           <Paper sx={{ p: 3, minWidth: 320, flex: 1 }}>
             <Typography variant="h6" sx={{ mb: 1 }}>1. Cargar productos</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Datos maestros: nombre, categoría, unidad, unidades por bulto, stock. Si un producto ya existe (por SKU, código de barras o nombre), se actualiza.
+              Datos maestros: nombre, categoría, unidad y cantidad por bulto (kilos si se vende por kilo, unidades si es caja o pack), stock. Si un producto ya existe (por SKU, código de barras o nombre), se actualiza.
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -634,7 +644,7 @@ export default function InventoryModule() {
             </Box>
             <Box sx={{ display: "flex", gap: 2 }}>
               <TextField label="Costo por bulto" size="small" type="number" value={form.costPerBulk} onChange={(e) => setForm({ ...form, costPerBulk: e.target.value })} sx={{ flex: 1 }} />
-              <TextField label="Unidades por bulto" size="small" type="number" value={form.unitsPerBulk} onChange={(e) => setForm({ ...form, unitsPerBulk: e.target.value })} sx={{ flex: 1 }} />
+              <TextField label={bulkLabelText} size="small" type="number" value={form.unitsPerBulk} onChange={(e) => setForm({ ...form, unitsPerBulk: e.target.value })} sx={{ flex: 1 }} />
             </Box>
             <Box sx={{ display: "flex", gap: 2 }}>
               <TextField label="Margen (%)" size="small" type="number" value={form.marginPct} onChange={(e) => setForm({ ...form, marginPct: e.target.value })} sx={{ flex: 1 }} />
@@ -647,7 +657,8 @@ export default function InventoryModule() {
             {formCostUnit != null && (
               <Box sx={{ bgcolor: "background.default", p: 1.5, borderRadius: 1 }}>
                 <Typography variant="body2">
-                  Costo unitario: <strong>${formCostUnit.toFixed(2)}</strong>
+                  Costo por {form.unitType === "kg" ? "kilo" : form.unitType === "lt" ? "litro" : form.unitType === "m" ? "metro" : "unidad"}:{" "}
+                  <strong>${formCostUnit.toFixed(2)}</strong>
                   {" · "}
                   Precio sugerido: <strong>${formSuggested?.toFixed(2) ?? "—"}</strong>
                 </Typography>
