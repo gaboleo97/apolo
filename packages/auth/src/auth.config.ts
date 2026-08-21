@@ -14,6 +14,7 @@ export const authConfig = {
   session: {
     strategy: "jwt",
     maxAge: 4 * 60 * 60,
+    updateAge: 0,
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
