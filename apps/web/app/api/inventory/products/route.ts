@@ -7,13 +7,15 @@ import { listProducts, createProduct, listCategories } from "@apolo/module-inven
 const createSchema = z.object({
   name: z.string().min(1).max(200),
   categoryId: z.string().uuid().nullable().optional(),
-  price: z.number().positive(),
-  cost: z.number().nonnegative().nullable().optional(),
+  price: z.number().min(0),
+  costPerBulk: z.number().nonnegative().nullable().optional(),
+  unitsPerBulk: z.number().positive().optional(),
+  marginPct: z.number().min(0).optional(),
   taxRate: z.number().min(0).optional(),
   sku: z.string().max(80).nullable().optional(),
   barcode: z.string().max(80).nullable().optional(),
   unitType: z.enum(["unit", "kg", "lt", "m", "box", "pack"]).optional(),
-  minStock: z.number().int().min(0).optional(),
+  minStock: z.number().min(0).optional(),
   description: z.string().max(500).nullable().optional(),
 });
 

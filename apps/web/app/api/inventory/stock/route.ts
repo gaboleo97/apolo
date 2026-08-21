@@ -6,7 +6,7 @@ import { adjustStock, listMovements, listProducts } from "@apolo/module-inventor
 const schema = z.object({
   productId: z.string().uuid(),
   type: z.enum(["in", "out", "adjustment"]),
-  quantity: z.number().int().positive(),
+  quantity: z.number().positive(),
   notes: z.string().max(300).nullable().optional(),
 });
 

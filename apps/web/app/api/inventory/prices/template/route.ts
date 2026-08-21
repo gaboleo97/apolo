@@ -9,15 +9,12 @@ export async function GET() {
   const example = [
     {
       nombre: "Papa",
-      categoria: "Verduras",
       sku: "PAPA-001",
       codigo_barras: "",
-      unidad: "kg",
-      unidades_por_bulto: "20",
-      stock_minimo: "50",
-      stock: "100",
-      descripcion: "Papa blanca por kilo",
-      activo: "si",
+      costo_bulto: "8000.00",
+      iva: "10.5",
+      margen: "40",
+      precio: "",
     },
   ];
 
@@ -26,7 +23,7 @@ export async function GET() {
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": 'attachment; filename="plantilla-productos.csv"',
+      "Content-Disposition": 'attachment; filename="plantilla-precios.csv"',
     },
   });
 }

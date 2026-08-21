@@ -7,7 +7,9 @@ export type ProductInput = {
   name: string;
   categoryId?: string | null;
   price: number;
-  cost?: number | null;
+  costPerBulk?: number | null;
+  unitsPerBulk?: number;
+  marginPct?: number;
   taxRate?: number;
   sku?: string | null;
   barcode?: string | null;
@@ -16,7 +18,37 @@ export type ProductInput = {
   description?: string | null;
 };
 
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function toNum(v: string | null | undefined): number {
+  return v == null ? 0 : Number(v);
+}
+
+export function calcCostPerUnit(costPerBulk: number | null, unitsPerBulk: number): number | null {
+  if (costPerBulk == null) return null;
+  const units = unitsPerBulk > 0 ? unitsPerBulk : 1;
+  return round2(costPerBulk / units);
+}
+
+export function calcSuggestedPrice(
+  costPerBulk: number | null,
+  unitsPerBulk: number,
+  taxRate: number,
+  marginPct: number
+): number | null {
+  const costPerUnit = calcCostPerUnit(costPerBulk, unitsPerBulk);
+  if (costPerUnit == null) return null;
+  return round2(costPerUnit * (1 + taxRate / 100) * (1 + marginPct / 100));
+}
+
 function serializeProduct(p: typeof products.$inferSelect) {
+  const costPerBulk = p.costPerBulk != null ? Number(p.costPerBulk) : null;
+  const unitsPerBulk = toNum(p.unitsPerBulk) || 1;
+  const marginPct = toNum(p.marginPct);
+  const taxRate = p.taxRate != null ? Number(p.taxRate) : 21;
+
   return {
     id: p.id,
     tenantId: p.tenantId,
@@ -27,10 +59,14 @@ function serializeProduct(p: typeof products.$inferSelect) {
     barcode: p.barcode,
     unitType: p.unitType,
     price: Number(p.price),
-    cost: p.cost != null ? Number(p.cost) : null,
-    taxRate: p.taxRate != null ? Number(p.taxRate) : 0,
-    minStock: p.minStock,
-    currentStock: p.currentStock,
+    costPerBulk,
+    unitsPerBulk,
+    marginPct,
+    taxRate,
+    costPerUnit: calcCostPerUnit(costPerBulk, unitsPerBulk),
+    suggestedPrice: calcSuggestedPrice(costPerBulk, unitsPerBulk, taxRate, marginPct),
+    minStock: toNum(p.minStock),
+    currentStock: toNum(p.currentStock),
     isActive: p.isActive,
     createdAt: p.createdAt,
   };
@@ -58,7 +94,15 @@ export async function getProduct(tenantId: string, productId: string) {
   return row ? serializeProduct(row) : null;
 }
 
+export function generateSku(name: string): string {
+  const prefix = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) || "PRD";
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `${prefix}-${suffix}`;
+}
+
 export async function createProduct(tenantId: string, input: ProductInput) {
+  const sku = input.sku?.trim() || generateSku(input.name);
+
   const created = await db
     .insert(products)
     .values({
@@ -66,12 +110,14 @@ export async function createProduct(tenantId: string, input: ProductInput) {
       name: input.name.trim(),
       categoryId: input.categoryId ?? null,
       price: String(input.price),
-      cost: input.cost != null ? String(input.cost) : null,
+      costPerBulk: input.costPerBulk != null ? String(input.costPerBulk) : null,
+      unitsPerBulk: String(input.unitsPerBulk ?? 1),
+      marginPct: String(input.marginPct ?? 0),
       taxRate: String(input.taxRate ?? 21),
-      sku: input.sku?.trim() || null,
+      sku,
       barcode: input.barcode?.trim() || null,
       unitType: input.unitType ?? "unit",
-      minStock: input.minStock ?? 0,
+      minStock: String(input.minStock ?? 0),
       description: input.description?.trim() || null,
       isActive: true,
     })
@@ -92,12 +138,16 @@ export async function updateProduct(
       ...(input.name !== undefined ? { name: input.name.trim() } : {}),
       ...(input.categoryId !== undefined ? { categoryId: input.categoryId ?? null } : {}),
       ...(input.price !== undefined ? { price: String(input.price) } : {}),
-      ...(input.cost !== undefined ? { cost: input.cost != null ? String(input.cost) : null } : {}),
+      ...(input.costPerBulk !== undefined
+        ? { costPerBulk: input.costPerBulk != null ? String(input.costPerBulk) : null }
+        : {}),
+      ...(input.unitsPerBulk !== undefined ? { unitsPerBulk: String(input.unitsPerBulk) } : {}),
+      ...(input.marginPct !== undefined ? { marginPct: String(input.marginPct) } : {}),
       ...(input.taxRate !== undefined ? { taxRate: String(input.taxRate) } : {}),
       ...(input.sku !== undefined ? { sku: input.sku?.trim() || null } : {}),
       ...(input.barcode !== undefined ? { barcode: input.barcode?.trim() || null } : {}),
       ...(input.unitType !== undefined ? { unitType: input.unitType } : {}),
-      ...(input.minStock !== undefined ? { minStock: input.minStock } : {}),
+      ...(input.minStock !== undefined ? { minStock: String(input.minStock) } : {}),
       ...(input.description !== undefined ? { description: input.description?.trim() || null } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
     })
@@ -142,7 +192,7 @@ export async function adjustStock(
     });
     if (!product) return { ok: false as const, error: "NOT_FOUND" as const };
 
-    const current = product.currentStock ?? 0;
+    const current = toNum(product.currentStock);
     let next = current;
 
     if (input.type === "in") {
@@ -154,13 +204,13 @@ export async function adjustStock(
       next = input.quantity;
     }
 
-    await tx.update(products).set({ currentStock: next }).where(eq(products.id, input.productId));
+    await tx.update(products).set({ currentStock: String(next) }).where(eq(products.id, input.productId));
     await tx.insert(stockMovements).values({
       tenantId,
       productId: input.productId,
       userId: input.userId,
       type: input.type,
-      quantity: input.quantity,
+      quantity: String(input.quantity),
       notes: input.notes?.trim() || null,
     });
 
@@ -179,26 +229,7 @@ export async function listMovements(tenantId: string, productId?: string) {
   });
 }
 
-export type ImportRow = {
-  nombre?: string;
-  categoria?: string;
-  sku?: string;
-  codigo_barras?: string;
-  unidad?: string;
-  precio?: string;
-  costo?: string;
-  iva?: string;
-  stock_minimo?: string;
-  stock?: string;
-  descripcion?: string;
-  activo?: string;
-};
-
-export type ImportReport = {
-  created: number;
-  updated: number;
-  errors: { line: number; error: string }[];
-};
+// ---------- Import / export ----------
 
 function parseNumber(v?: string): number | null {
   if (v == null) return null;
@@ -221,10 +252,10 @@ function parseBool(v?: string): boolean {
 
 const unitMap: Record<string, UnitType> = {
   unidad: "unit", un: "unit", u: "unit", unit: "unit",
-  kg: "kg", kilogramo: "kg", kilos: "kg",
+  kg: "kg", kilogramo: "kg", kilos: "kg", kilo: "kg",
   lt: "lt", l: "lt", litro: "lt", litros: "lt",
   m: "m", metro: "m", metros: "m",
-  box: "box", caja: "box", cajas: "box",
+  box: "box", caja: "box", cajas: "box", bulto: "box", bultos: "box",
   pack: "pack", paquete: "pack",
 };
 
@@ -270,10 +301,29 @@ async function findProductByKey(tenantId: string, sku: string | null, barcode: s
   });
 }
 
+export type ImportReport = {
+  created: number;
+  updated: number;
+  errors: { line: number; error: string }[];
+};
+
+export type ProductImportRow = {
+  nombre?: string;
+  categoria?: string;
+  sku?: string;
+  codigo_barras?: string;
+  unidad?: string;
+  unidades_por_bulto?: string;
+  stock_minimo?: string;
+  stock?: string;
+  descripcion?: string;
+  activo?: string;
+};
+
 export async function upsertProducts(
   tenantId: string,
   userId: string,
-  rows: ImportRow[]
+  rows: ProductImportRow[]
 ): Promise<ImportReport> {
   const report: ImportReport = { created: 0, updated: 0, errors: [] };
 
@@ -289,17 +339,10 @@ export async function upsertProducts(
         continue;
       }
 
-      const precio = parseNumber(row.precio);
-      if (precio == null || precio <= 0) {
-        report.errors.push({ line, error: "Precio inválido o faltante" });
-        continue;
-      }
-
-      const costo = parseNumber(row.costo);
-      const iva = parseNumber(row.iva) ?? 21;
-      const stockMinimo = parseNumber(row.stock_minimo);
-      const stock = parseNumber(row.stock);
       const unidad = normalizeUnit(row.unidad);
+      const unitsPerBulk = parseNumber(row.unidades_por_bulto) ?? 1;
+      const stockMinimo = parseNumber(row.stock_minimo) ?? 0;
+      const stock = parseNumber(row.stock);
       const activo = parseBool(row.activo);
 
       const sku = row.sku?.trim() || null;
@@ -315,10 +358,8 @@ export async function upsertProducts(
           .set({
             name: nombre,
             categoryId,
-            price: String(precio),
-            cost: costo != null ? String(costo) : null,
-            taxRate: String(iva),
-            minStock: stockMinimo != null ? Math.round(stockMinimo) : 0,
+            unitsPerBulk: String(unitsPerBulk),
+            minStock: String(stockMinimo),
             unitType: unidad,
             sku: sku ?? existing.sku,
             barcode: barcode ?? existing.barcode,
@@ -331,7 +372,7 @@ export async function upsertProducts(
           await adjustStock(tenantId, {
             productId: existing.id,
             type: "adjustment",
-            quantity: Math.round(stock),
+            quantity: stock,
             notes: "carga masiva",
             userId,
           });
@@ -339,20 +380,24 @@ export async function upsertProducts(
 
         report.updated++;
       } else {
+        const finalSku = sku ?? generateSku(nombre);
+
         const created = await db
           .insert(products)
           .values({
             tenantId,
             name: nombre,
             categoryId,
-            price: String(precio),
-            cost: costo != null ? String(costo) : null,
-            taxRate: String(iva),
-            sku,
+            price: "0",
+            costPerBulk: null,
+            unitsPerBulk: String(unitsPerBulk),
+            marginPct: "0",
+            taxRate: "21",
+            sku: finalSku,
             barcode,
             unitType: unidad,
-            minStock: stockMinimo != null ? Math.round(stockMinimo) : 0,
-            currentStock: 0,
+            minStock: String(stockMinimo),
+            currentStock: "0",
             description: row.descripcion?.trim() || null,
             isActive: activo,
           })
@@ -363,7 +408,7 @@ export async function upsertProducts(
           await adjustStock(tenantId, {
             productId: p.id,
             type: "adjustment",
-            quantity: Math.round(stock),
+            quantity: stock,
             notes: "carga masiva",
             userId,
           });
@@ -371,6 +416,83 @@ export async function upsertProducts(
 
         report.created++;
       }
+    } catch {
+      report.errors.push({ line, error: "Error inesperado" });
+    }
+  }
+
+  return report;
+}
+
+export type PriceImportRow = {
+  nombre?: string;
+  sku?: string;
+  codigo_barras?: string;
+  costo_bulto?: string;
+  iva?: string;
+  margen?: string;
+  precio?: string;
+};
+
+export async function upsertPrices(
+  tenantId: string,
+  rows: PriceImportRow[]
+): Promise<ImportReport> {
+  const report: ImportReport = { created: 0, updated: 0, errors: [] };
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+    const line = i + 2;
+
+    try {
+      const nombre = row.nombre?.trim();
+      const sku = row.sku?.trim() || null;
+      const barcode = row.codigo_barras?.trim() || null;
+      if (!nombre && !sku && !barcode) {
+        report.errors.push({ line, error: "Falta nombre, SKU o código de barras" });
+        continue;
+      }
+
+      const existing = await findProductByKey(tenantId, sku, barcode, nombre ?? "");
+      if (!existing) {
+        report.errors.push({ line, error: "Producto no encontrado" });
+        continue;
+      }
+
+      const costoBulto = parseNumber(row.costo_bulto);
+      const iva = parseNumber(row.iva);
+      const margen = parseNumber(row.margen);
+      const precio = parseNumber(row.precio);
+
+      const unitsPerBulk = toNum(existing.unitsPerBulk) || 1;
+      const taxRate = iva ?? (existing.taxRate != null ? Number(existing.taxRate) : 21);
+      const marginPct = margen ?? (existing.marginPct != null ? Number(existing.marginPct) : 0);
+
+      let finalPrice = precio;
+      if (finalPrice == null) {
+        if (costoBulto == null) {
+          report.errors.push({ line, error: "Falta costo o precio" });
+          continue;
+        }
+        finalPrice = calcSuggestedPrice(costoBulto, unitsPerBulk, taxRate, marginPct);
+        if (finalPrice == null) {
+          report.errors.push({ line, error: "No se pudo calcular el precio" });
+          continue;
+        }
+      }
+
+      await db
+        .update(products)
+        .set({
+          ...(costoBulto != null ? { costPerBulk: String(costoBulto) } : {}),
+          ...(iva != null ? { taxRate: String(iva) } : {}),
+          ...(margen != null ? { marginPct: String(margen) } : {}),
+          price: String(finalPrice),
+        })
+        .where(eq(products.id, existing.id));
+
+      report.updated++;
     } catch {
       report.errors.push({ line, error: "Error inesperado" });
     }

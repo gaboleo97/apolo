@@ -15,19 +15,40 @@ El sistema SHALL permitir listar, crear, editar y deshabilitar productos del ten
 
 - GIVEN un usuario con el módulo `inventory`
 - WHEN consulta los productos
-- THEN ve únicamente los productos de su tenant, con precio, costo, stock y estado
+- THEN ve únicamente los productos de su tenant, con precio, costo por bulto, margen y stock
 
 #### Scenario: Crear producto
 
 - GIVEN un usuario con el módulo `inventory`
 - WHEN crea un producto con nombre, precio y unidad
 - THEN el producto queda asociado a su tenant con stock inicial 0
+- AND si el SKU viene vacío, se autogenera
 
 #### Scenario: Deshabilitar producto
 
 - GIVEN un usuario con el módulo `inventory`
 - WHEN deshabilita un producto
 - THEN el producto deja de mostrarse como activo
+
+### Requirement: Costo por bulto y precio sugerido
+
+El sistema SHALL calcular el costo unitario y un precio sugerido a partir del costo por bulto, el IVA y el margen de ganancia.
+
+#### Scenario: Costo unitario
+
+- GIVEN un producto con costo por bulto y unidades por bulto
+- THEN el costo unitario es el costo por bulto dividido por las unidades por bulto
+
+#### Scenario: Precio sugerido
+
+- GIVEN un producto con costo por bulto, IVA y margen de ganancia
+- THEN el precio sugerido es costo unitario × (1 + IVA/100) × (1 + margen/100)
+- AND el precio de venta real es editable (por defecto, el sugerido)
+
+#### Scenario: Stock decimal
+
+- GIVEN un producto vendido por kilo
+- THEN el stock soporta decimales (ej. 15.5 kg)
 
 ### Requirement: Gestión de categorías
 
@@ -88,25 +109,20 @@ El sistema SHALL restringir el inventario a los usuarios con el módulo `invento
 
 ### Requirement: Importación y exportación masiva
 
-El sistema SHALL permitir exportar e importar productos en CSV.
+El sistema SHALL permitir exportar e importar productos y precios en CSV, en dos pasos separados.
 
-#### Scenario: Descargar plantilla
-
-- GIVEN un usuario con el módulo `inventory`
-- WHEN descarga la plantilla
-- THEN recibe un CSV con las columnas de producto y una fila de ejemplo
-
-#### Scenario: Exportar productos
+#### Scenario: Cargar productos (datos maestros)
 
 - GIVEN un usuario con el módulo `inventory`
-- WHEN exporta los productos
-- THEN recibe un CSV con los productos de su tenant en el mismo formato de la plantilla
+- WHEN sube un CSV con nombre, categoría, unidad, unidades por bulto y stock
+- THEN se crean o actualizan los productos, sin tocar precios
+- AND si el SKU viene vacío, se autogenera
 
-#### Scenario: Importar creando productos
+#### Scenario: Cargar precios
 
 - GIVEN un usuario con el módulo `inventory`
-- WHEN sube un CSV con productos que no existen
-- THEN se crean los productos asociados a su tenant
+- WHEN sube un CSV de precios identificando el producto por nombre, SKU o código de barras
+- THEN se actualizan costo por bulto, IVA, margen y precio del producto
 
 #### Scenario: Importar sin duplicar
 
@@ -114,13 +130,12 @@ El sistema SHALL permitir exportar e importar productos en CSV.
 - WHEN se sube el CSV
 - THEN los existentes se actualizan en vez de duplicarse
 
-#### Scenario: Importar actualiza stock con movimiento
+#### Scenario: Precio por defecto sugerido
 
-- GIVEN un CSV con una cantidad de stock para un producto existente
-- WHEN se sube el CSV
-- THEN se actualiza el stock y se registra un movimiento de ajuste en el historial
+- GIVEN una carga de precios sin columna de precio
+- THEN el precio se calcula automáticamente a partir del costo por bulto, IVA y margen
 
 #### Scenario: Reporte de importación
 
 - GIVEN una importación
-- THEN el sistema devuelve cuántos productos se crearon, cuántos se actualizaron y los errores con su fila
+- THEN el sistema devuelve cuántos se crearon, cuántos se actualizaron y los errores con su fila

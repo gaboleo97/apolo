@@ -49,8 +49,12 @@ type Product = {
   barcode: string | null;
   categoryId: string | null;
   price: number;
-  cost: number | null;
+  costPerBulk: number | null;
+  unitsPerBulk: number;
+  marginPct: number;
   taxRate: number;
+  costPerUnit: number | null;
+  suggestedPrice: number | null;
   unitType: string;
   minStock: number;
   currentStock: number;
@@ -71,7 +75,9 @@ const emptyForm = {
   name: "",
   categoryId: "",
   price: "",
-  cost: "",
+  costPerBulk: "",
+  unitsPerBulk: "1",
+  marginPct: "0",
   taxRate: "21",
   sku: "",
   barcode: "",
@@ -106,11 +112,23 @@ export default function InventoryModule() {
   const [importReport, setImportReport] = useState<{ created: number; updated: number; errors: { line: number; error: string }[] } | null>(null);
   const [importing, setImporting] = useState(false);
 
+  const [priceFile, setPriceFile] = useState<File | null>(null);
+  const [priceReport, setPriceReport] = useState<{ created: number; updated: number; errors: { line: number; error: string }[] } | null>(null);
+  const [priceImporting, setPriceImporting] = useState(false);
+
   function notify(msg: string, sev: "success" | "error") {
     setSnack({ msg, sev });
   }
 
   const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? "—";
+
+  const formCostBulk = form.costPerBulk ? Number(form.costPerBulk) : null;
+  const formUnits = Number(form.unitsPerBulk) || 1;
+  const formTax = Number(form.taxRate) || 0;
+  const formMargin = Number(form.marginPct) || 0;
+  const formCostUnit = formCostBulk != null ? formCostBulk / formUnits : null;
+  const formSuggested =
+    formCostUnit != null ? formCostUnit * (1 + formTax / 100) * (1 + formMargin / 100) : null;
 
   const loadProducts = useCallback(async () => {
     const params = new URLSearchParams();
@@ -149,12 +167,14 @@ export default function InventoryModule() {
       name: p.name,
       categoryId: p.categoryId ?? "",
       price: String(p.price),
-      cost: p.cost != null ? String(p.cost) : "",
-      taxRate: String(p.taxRate),
+      costPerBulk: p.costPerBulk != null ? String(p.costPerBulk) : "",
+      unitsPerBulk: String(p.unitsPerBulk ?? 1),
+      marginPct: String(p.marginPct ?? 0),
+      taxRate: String(p.taxRate ?? 21),
       sku: p.sku ?? "",
       barcode: p.barcode ?? "",
       unitType: p.unitType,
-      minStock: String(p.minStock),
+      minStock: String(p.minStock ?? 0),
       description: p.description ?? "",
     });
     setOpenForm(true);
@@ -166,7 +186,9 @@ export default function InventoryModule() {
       name: form.name,
       categoryId: form.categoryId || null,
       price: Number(form.price),
-      cost: form.cost ? Number(form.cost) : null,
+      costPerBulk: form.costPerBulk ? Number(form.costPerBulk) : null,
+      unitsPerBulk: Number(form.unitsPerBulk || 1),
+      marginPct: Number(form.marginPct || 0),
       taxRate: Number(form.taxRate || 0),
       sku: form.sku || null,
       barcode: form.barcode || null,
@@ -277,6 +299,36 @@ export default function InventoryModule() {
     }
   }
 
+  async function handleImportPrices() {
+    if (!priceFile) {
+      notify("Seleccioná un archivo CSV primero", "error");
+      return;
+    }
+    setPriceImporting(true);
+    setPriceReport(null);
+
+    const formData = new FormData();
+    formData.append("file", priceFile);
+
+    const res = await fetch("/api/inventory/prices/import", {
+      method: "POST",
+      body: formData,
+    });
+
+    setPriceImporting(false);
+
+    if (res.ok) {
+      const data = await res.json();
+      setPriceReport(data.report);
+      notify(`Precios: ${data.report.updated} actualizados`, "success");
+      setPriceFile(null);
+      loadProducts();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      notify(data.error ?? "No se pudo importar el archivo", "error");
+    }
+  }
+
   return (
     <Box>
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
@@ -329,7 +381,8 @@ export default function InventoryModule() {
                   <TableCell>SKU</TableCell>
                   <TableCell>Categoría</TableCell>
                   <TableCell align="right">Precio</TableCell>
-                  <TableCell align="right">Costo</TableCell>
+                  <TableCell align="right">Sugerido</TableCell>
+                  <TableCell align="right">Margen</TableCell>
                   <TableCell align="right">Stock</TableCell>
                   <TableCell>Activo</TableCell>
                   <TableCell></TableCell>
@@ -342,7 +395,10 @@ export default function InventoryModule() {
                     <TableCell>{p.sku ?? "—"}</TableCell>
                     <TableCell>{categoryName(p.categoryId)}</TableCell>
                     <TableCell align="right">${p.price.toFixed(2)}</TableCell>
-                    <TableCell align="right">{p.cost != null ? `$${p.cost.toFixed(2)}` : "—"}</TableCell>
+                    <TableCell align="right">
+                      {p.suggestedPrice != null ? `$${p.suggestedPrice.toFixed(2)}` : "—"}
+                    </TableCell>
+                    <TableCell align="right">{p.marginPct}%</TableCell>
                     <TableCell align="right">{p.currentStock}</TableCell>
                     <TableCell>
                       <Checkbox size="small" checked={p.isActive} onChange={() => handleToggleProduct(p)} />
@@ -354,7 +410,7 @@ export default function InventoryModule() {
                 ))}
                 {products.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ color: "text.secondary", py: 3 }}>
+                    <TableCell colSpan={9} align="center" sx={{ color: "text.secondary", py: 3 }}>
                       No hay productos.
                     </TableCell>
                   </TableRow>
@@ -462,10 +518,10 @@ export default function InventoryModule() {
 
       {tab === 3 && (
         <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "flex-start" }}>
-          <Paper sx={{ p: 3, minWidth: 320 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Carga masiva de productos</Typography>
+          <Paper sx={{ p: 3, minWidth: 320, flex: 1 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>1. Cargar productos</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              1. Descargá la plantilla, completala y subila. Si un producto ya existe (por SKU, código de barras o nombre), se actualiza en vez de duplicarse.
+              Datos maestros: nombre, categoría, unidad, unidades por bulto, stock. Si un producto ya existe (por SKU, código de barras o nombre), se actualiza.
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -489,25 +545,66 @@ export default function InventoryModule() {
                 {importing ? "Cargando..." : "Cargar archivo"}
               </Button>
             </Box>
+            {importReport && (
+              <Box sx={{ mt: 2 }}>
+                <Typography>✅ Creados: {importReport.created} · ♻️ Actualizados: {importReport.updated}</Typography>
+                {importReport.errors.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="subtitle2" color="error">Errores ({importReport.errors.length}):</Typography>
+                    {importReport.errors.map((e, i) => (
+                      <Typography key={i} variant="body2" color="text.secondary">
+                        Fila {e.line}: {e.error}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
           </Paper>
 
-          {importReport && (
-            <Paper sx={{ p: 3, flex: 1, minWidth: 300 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>Resultado</Typography>
-              <Typography>✅ Creados: {importReport.created}</Typography>
-              <Typography>♻️ Actualizados: {importReport.updated}</Typography>
-              {importReport.errors.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" color="error">Errores ({importReport.errors.length}):</Typography>
-                  {importReport.errors.map((e, i) => (
-                    <Typography key={i} variant="body2" color="text.secondary">
-                      Fila {e.line}: {e.error}
-                    </Typography>
-                  ))}
-                </Box>
-              )}
-            </Paper>
-          )}
+          <Paper sx={{ p: 3, minWidth: 320, flex: 1 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>2. Cargar precios</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Costo por bulto, IVA, margen % y precio. El producto se identifica por nombre, SKU o código de barras (ya cargados en el paso 1).
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Button variant="outlined" href="/api/inventory/prices/template" component="a">
+                  Descargar plantilla
+                </Button>
+                <Button variant="outlined" href="/api/inventory/prices/export" component="a">
+                  Exportar precios
+                </Button>
+              </Box>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+                <Button variant="contained" component="label" disableElevation>
+                  Elegir archivo
+                  <input type="file" accept=".csv,text/csv" hidden onChange={(e) => setPriceFile(e.target.files?.[0] ?? null)} />
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {priceFile ? priceFile.name : "Ningún archivo seleccionado"}
+                </Typography>
+              </Box>
+              <Button variant="contained" onClick={handleImportPrices} disabled={priceImporting || !priceFile} disableElevation>
+                {priceImporting ? "Cargando..." : "Cargar archivo"}
+              </Button>
+            </Box>
+            {priceReport && (
+              <Box sx={{ mt: 2 }}>
+                <Typography>♻️ Actualizados: {priceReport.updated}</Typography>
+                {priceReport.errors.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="subtitle2" color="error">Errores ({priceReport.errors.length}):</Typography>
+                    {priceReport.errors.map((e, i) => (
+                      <Typography key={i} variant="body2" color="text.secondary">
+                        Fila {e.line}: {e.error}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Paper>
         </Box>
       )}
 
@@ -536,15 +633,33 @@ export default function InventoryModule() {
               </FormControl>
             </Box>
             <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField label="Precio" size="small" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required sx={{ flex: 1 }} />
-              <TextField label="Costo" size="small" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} sx={{ flex: 1 }} />
+              <TextField label="Costo por bulto" size="small" type="number" value={form.costPerBulk} onChange={(e) => setForm({ ...form, costPerBulk: e.target.value })} sx={{ flex: 1 }} />
+              <TextField label="Unidades por bulto" size="small" type="number" value={form.unitsPerBulk} onChange={(e) => setForm({ ...form, unitsPerBulk: e.target.value })} sx={{ flex: 1 }} />
             </Box>
             <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField label="Margen (%)" size="small" type="number" value={form.marginPct} onChange={(e) => setForm({ ...form, marginPct: e.target.value })} sx={{ flex: 1 }} />
               <TextField label="IVA (%)" size="small" type="number" value={form.taxRate} onChange={(e) => setForm({ ...form, taxRate: e.target.value })} sx={{ flex: 1 }} />
+            </Box>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField label="Precio de venta" size="small" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required sx={{ flex: 1 }} />
               <TextField label="Stock mínimo" size="small" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} sx={{ flex: 1 }} />
             </Box>
+            {formCostUnit != null && (
+              <Box sx={{ bgcolor: "background.default", p: 1.5, borderRadius: 1 }}>
+                <Typography variant="body2">
+                  Costo unitario: <strong>${formCostUnit.toFixed(2)}</strong>
+                  {" · "}
+                  Precio sugerido: <strong>${formSuggested?.toFixed(2) ?? "—"}</strong>
+                </Typography>
+                {formSuggested != null && (
+                  <Button size="small" variant="outlined" sx={{ mt: 0.5 }} onClick={() => setForm({ ...form, price: formSuggested.toFixed(2) })}>
+                    Usar precio sugerido
+                  </Button>
+                )}
+              </Box>
+            )}
             <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField label="SKU" size="small" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} sx={{ flex: 1 }} />
+              <TextField label="SKU (vacío = autogenerado)" size="small" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} sx={{ flex: 1 }} />
               <TextField label="Código de barras" size="small" value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} sx={{ flex: 1 }} />
             </Box>
             <TextField label="Descripción" size="small" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} multiline minRows={2} />
