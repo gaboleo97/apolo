@@ -33,6 +33,8 @@ cp .env.example .env.local   # solo si querés sobreescribir las locales (opcion
 | `AUTH_SECRET` | valor local cualquiera | secreto fuerte en Vercel |
 | `AUTH_URL` | `http://localhost:3000` | dominio de Vercel |
 | `NEXT_PUBLIC_SUPABASE_*` | — | Supabase Cloud (solo si usás la API/edge) |
+| `RESEND_API_KEY` | tu API key de Resend | API key de Resend en Vercel |
+| `EMAIL_FROM` | `Apolo <onboarding@resend.dev>` (dev) | `Apolo <noreply@tudominio>` |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | para `db:seed` | para `db:seed` |
 
 ## Entorno LOCAL
