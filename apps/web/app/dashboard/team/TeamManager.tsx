@@ -46,6 +46,16 @@ type TeamUser = {
   isActive: boolean;
 };
 
+type Invitation = {
+  id: string;
+  email: string | null;
+  role: string;
+  modules: string[] | null;
+  token: string;
+  usedAt: string | null;
+  createdAt: string;
+};
+
 export default function TeamManager() {
   const [users, setUsers] = useState<TeamUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +67,12 @@ export default function TeamManager() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<string>("seller");
   const [modules, setModules] = useState<string[]>(["sales"]);
+
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("seller");
+  const [inviteModules, setInviteModules] = useState<string[]>(["sales"]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/team");
@@ -70,9 +86,18 @@ export default function TeamManager() {
     setLoading(false);
   }, []);
 
+  const loadInvitations = useCallback(async () => {
+    const res = await fetch("/api/team/invitations");
+    if (res.ok) {
+      const data = await res.json();
+      setInvitations(data.invitations);
+    }
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadInvitations();
+  }, [load, loadInvitations]);
 
   function toggleModule(list: string[], key: string): string[] {
     return list.includes(key) ? list.filter((m) => m !== key) : [...list, key];
@@ -113,6 +138,36 @@ export default function TeamManager() {
       return;
     }
     load();
+  }
+
+  async function handleCreateInvite(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const res = await fetch("/api/team/invitations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: inviteEmail || undefined,
+        role: inviteRole,
+        modules: inviteModules,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "No se pudo crear la invitación");
+      return;
+    }
+    setInviteEmail("");
+    setInviteRole("seller");
+    setInviteModules(["sales"]);
+    loadInvitations();
+  }
+
+  async function copyLink(token: string) {
+    const url = `${window.location.origin}/register?invite=${token}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedId(token);
+    setTimeout(() => setCopiedId(null), 2000);
   }
 
   return (
@@ -229,6 +284,72 @@ export default function TeamManager() {
               <Divider sx={{ mt: 2 }} />
             </Box>
           ))}
+      </Paper>
+
+      <Paper sx={{ p: 3, mt: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Invitaciones
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Generá un enlace para que alguien se una a tu empresa con un rol y módulos ya asignados.
+        </Typography>
+        <Box component="form" onSubmit={handleCreateInvite} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            <TextField label="Email (opcional)" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} size="small" sx={{ flex: 1, minWidth: 200 }} />
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Rol</InputLabel>
+              <Select label="Rol" value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
+                {ROLES.map((r) => (
+                  <MenuItem key={r} value={r}>{roleLabels[r]}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {ALL_MODULES.map((m) => (
+              <FormControlLabel
+                key={m}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={inviteModules.includes(m)}
+                    onChange={() => setInviteModules((prev) => toggleModule(prev, m))}
+                  />
+                }
+                label={moduleLabels[m]}
+              />
+            ))}
+          </Box>
+          <Box>
+            <Button type="submit" variant="contained" disableElevation>
+              Generar invitación
+            </Button>
+          </Box>
+        </Box>
+
+        {invitations.length > 0 && (
+          <Box sx={{ mt: 3 }}>
+            <Divider sx={{ mb: 2 }} />
+            {invitations.map((inv) => (
+              <Box key={inv.id} sx={{ display: "flex", alignItems: "center", gap: 2, py: 1, flexWrap: "wrap" }}>
+                <Box sx={{ minWidth: 180 }}>
+                  <Typography sx={{ fontWeight: 600 }}>{roleLabels[inv.role]}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {inv.email ?? "Cualquier email"} · {inv.usedAt ? "Usada" : "Pendiente"}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={Boolean(inv.usedAt)}
+                  onClick={() => copyLink(inv.token)}
+                >
+                  {copiedId === inv.token ? "¡Copiado!" : "Copiar enlace"}
+                </Button>
+              </Box>
+            ))}
+          </Box>
+        )}
       </Paper>
     </Box>
   );

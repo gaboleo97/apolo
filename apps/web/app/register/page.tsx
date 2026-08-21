@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Avatar from "@mui/material/Avatar";
@@ -10,10 +10,15 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const invite = searchParams.get("invite");
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const isInvite = Boolean(invite);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,14 +26,16 @@ export default function RegisterPage() {
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const res = await fetch("/api/register", {
+    const payload = {
+      name: form.get("name"),
+      email: form.get("email"),
+      password: form.get("password"),
+    };
+
+    const res = await fetch(isInvite ? "/api/register/join" : "/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.get("name"),
-        email: form.get("email"),
-        password: form.get("password"),
-      }),
+      body: JSON.stringify(isInvite ? { ...payload, token: invite } : payload),
     });
 
     if (res.ok) {
@@ -57,10 +64,12 @@ export default function RegisterPage() {
             A
           </Avatar>
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Crear cuenta
+            {isInvite ? "Unirte a una empresa" : "Crear cuenta"}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Comenzá con tu prueba gratuita
+            {isInvite
+              ? "Te invitaron a formar parte de una empresa en Apolo"
+              : "Comenzá con tu prueba gratuita"}
           </Typography>
         </Box>
 
@@ -70,7 +79,7 @@ export default function RegisterPage() {
           <TextField label="Email" name="email" type="email" required fullWidth size="small" placeholder="tu@email.com" />
           <TextField label="Contraseña" name="password" type="password" required fullWidth size="small" placeholder="••••••••" />
           <Button type="submit" variant="contained" fullWidth disableElevation sx={{ py: 1.2 }} disabled={loading}>
-            {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
+            {loading ? "Creando cuenta..." : isInvite ? "Unirme a la empresa" : "Crear cuenta gratis"}
           </Button>
         </Box>
 
@@ -82,5 +91,13 @@ export default function RegisterPage() {
         </Typography>
       </Paper>
     </Box>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }

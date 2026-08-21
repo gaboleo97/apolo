@@ -69,3 +69,18 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const tenantInvitations = pgTable("tenant_invitations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  email: text("email"),
+  role: text("role", {
+    enum: ["super_admin", "tenant_admin", "manager", "seller", "viewer"],
+  }).notNull(),
+  modules: jsonb("modules").$type<string[]>(),
+  token: text("token").unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
