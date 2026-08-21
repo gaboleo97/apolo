@@ -112,7 +112,7 @@ export default function AdminPanel() {
     const res = await fetch(`/api/admin/tenants/${t.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ country: t.country, plan: t.plan }),
+      body: JSON.stringify({ name: t.name, country: t.country, plan: t.plan }),
     });
     if (!res.ok) {
       setError("No se pudo guardar el tenant");
@@ -173,7 +173,14 @@ export default function AdminPanel() {
               <TableBody>
                 {tenants.map((t) => (
                   <TableRow key={t.id}>
-                    <TableCell>{t.name}</TableCell>
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        value={t.name}
+                        onChange={(e) => setTenants((prev) => prev.map((x) => (x.id === t.id ? { ...x, name: e.target.value } : x)))}
+                        sx={{ minWidth: 140 }}
+                      />
+                    </TableCell>
                     <TableCell>{t.slug}</TableCell>
                     <TableCell>
                       <FormControl size="small" sx={{ minWidth: 90 }}>
