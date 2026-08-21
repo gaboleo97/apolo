@@ -10,6 +10,7 @@ import CardContent from "@mui/material/CardContent";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Avatar from "@mui/material/Avatar";
+import AuthButtons from "./AuthButtons";
 
 const modules = [
   {
@@ -55,12 +56,7 @@ export default function Home() {
           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
             Apolo
           </Typography>
-          <Button component={Link} href="/login" sx={{ color: "text.secondary", mr: 1 }}>
-            Iniciar sesión
-          </Button>
-          <Button component={Link} href="/register" variant="contained" disableElevation>
-            Comenzar gratis
-          </Button>
+          <AuthButtons />
         </Toolbar>
       </AppBar>
 

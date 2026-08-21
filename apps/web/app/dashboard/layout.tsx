@@ -14,6 +14,7 @@ export default async function DashboardLayout({
       modules={user?.modules ?? []}
       role={user?.role ?? "viewer"}
       userName={user?.name ?? user?.email}
+      userEmail={user?.email}
     >
       {children}
     </DashboardShell>

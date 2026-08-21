@@ -38,6 +38,14 @@ import type { ModuleKey } from "@apolo/core";
 const drawerWidth = 240;
 const miniWidth = 64;
 
+const roleLabels: Record<string, string> = {
+  super_admin: "Super Admin",
+  tenant_admin: "Admin de la empresa",
+  manager: "Encargado",
+  seller: "Vendedor",
+  viewer: "Solo lectura",
+};
+
 const moduleMenu: { key: ModuleKey; label: string; href: string; icon: React.ReactNode }[] = [
   { key: "inventory", label: "Inventario", href: "/dashboard/inventory", icon: <InventoryIcon /> },
   { key: "sales", label: "Ventas", href: "/dashboard/sales", icon: <PointOfSaleIcon /> },
@@ -52,11 +60,13 @@ export default function DashboardShell({
   modules,
   role,
   userName,
+  userEmail,
   children,
 }: {
   modules: string[];
   role: string;
   userName?: string;
+  userEmail?: string;
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -208,12 +218,17 @@ export default function DashboardShell({
             <InputBase placeholder="Buscar..." fullWidth sx={{ fontSize: 14, color: "text.primary" }} />
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, ml: "auto" }}>
-            <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: "primary.main" }}>
-              {userName?.slice(0, 2).toUpperCase() ?? "A"}
+            <Avatar sx={{ width: 36, height: 36, fontSize: 13, bgcolor: "primary.main" }}>
+              {(userName ?? "A").slice(0, 2).toUpperCase()}
             </Avatar>
-            <Typography variant="body2" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
-              {userName ?? "Usuario"}
-            </Typography>
+            <Box sx={{ display: { xs: "none", sm: "block" }, textAlign: "right" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                {userName ?? "Usuario"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                {userEmail ? `${userEmail} · ` : ""}{roleLabels[role] ?? role}
+              </Typography>
+            </Box>
             <Tooltip title="Cerrar sesión">
               <IconButton color="inherit" onClick={() => signOut({ callbackUrl: "/login" })}>
                 <LogoutIcon />
