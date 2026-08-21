@@ -5,4 +5,5 @@ export * from "./team";
 export * from "./password-reset";
 export * from "./invitations";
 export * from "./account";
+export * from "./tenants";
 export * from "./types";

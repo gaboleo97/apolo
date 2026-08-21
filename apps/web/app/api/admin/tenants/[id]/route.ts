@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@apolo/auth";
-import { adminUpdateTenant } from "@apolo/auth";
+import { adminUpdateTenant, deleteTenant } from "@apolo/auth";
 import { db } from "@apolo/database";
 
 async function requireSuperAdmin() {
@@ -52,4 +52,18 @@ export async function PATCH(
   if (!tenant) return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
 
   return NextResponse.json({ ok: true, tenant });
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const admin = await requireSuperAdmin();
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { id } = await params;
+
+  await deleteTenant(id);
+
+  return NextResponse.json({ ok: true });
 }

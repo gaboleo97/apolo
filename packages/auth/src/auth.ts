@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { db } from "@apolo/database";
-import { users } from "@apolo/database";
+import { users, tenants } from "@apolo/database";
 import { getEffectiveModules } from "@apolo/core";
 import { authConfig } from "./auth.config";
 import { getIp, rateLimit } from "./rate-limit";
@@ -29,6 +29,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user || !user.isActive) return null;
+
+        const tenant = await db.query.tenants.findFirst({
+          where: (tenants, { eq }) => eq(tenants.id, user.tenantId),
+        });
+        if (!tenant || !tenant.isActive) return null;
 
         const isValid = await bcrypt.compare(password, user.passwordHash);
         if (!isValid) return null;

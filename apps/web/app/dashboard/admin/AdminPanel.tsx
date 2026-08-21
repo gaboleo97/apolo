@@ -42,7 +42,7 @@ const moduleLabels: Record<string, string> = {
   suppliers: "Proveedores",
 };
 
-type Tenant = { id: string; name: string; slug: string; country: string; plan: string };
+type Tenant = { id: string; name: string; slug: string; country: string; plan: string; isActive: boolean };
 type AdminUser = {
   id: string;
   name: string | null;
@@ -163,6 +163,33 @@ export default function AdminPanel() {
     notify("Tenant actualizado", "success");
   }
 
+  async function handleToggleTenantActive(t: Tenant) {
+    const res = await fetch(`/api/admin/tenants/${t.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !t.isActive }),
+    });
+    if (!res.ok) {
+      notify("No se pudo actualizar el estado del tenant", "error");
+      return;
+    }
+    load();
+    notify(t.isActive ? "Tenant deshabilitado" : "Tenant habilitado", "success");
+  }
+
+  async function handleDeleteTenant(t: Tenant) {
+    if (!window.confirm(`¿Seguro que querés eliminar el tenant "${t.name}"? Se borrarán todos sus usuarios y datos. Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    const res = await fetch(`/api/admin/tenants/${t.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      notify("No se pudo eliminar el tenant", "error");
+      return;
+    }
+    load();
+    notify("Tenant eliminado", "success");
+  }
+
   return (
     <Box>
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
@@ -209,6 +236,8 @@ export default function AdminPanel() {
                   <TableCell>Slug</TableCell>
                   <TableCell>País</TableCell>
                   <TableCell>Plan</TableCell>
+                  <TableCell>Activo</TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -255,9 +284,26 @@ export default function AdminPanel() {
                       </FormControl>
                     </TableCell>
                     <TableCell>
-                      <Button variant="outlined" size="small" onClick={() => handleSaveTenant(t)}>
-                        Guardar
-                      </Button>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            size="small"
+                            checked={t.isActive}
+                            onChange={() => handleToggleTenantActive(t)}
+                          />
+                        }
+                        label={t.isActive ? "Activo" : "Inactivo"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        <Button variant="outlined" size="small" onClick={() => handleSaveTenant(t)}>
+                          Guardar
+                        </Button>
+                        <Button variant="outlined" size="small" color="error" onClick={() => handleDeleteTenant(t)}>
+                          Eliminar
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}

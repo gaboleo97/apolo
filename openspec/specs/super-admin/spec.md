@@ -34,6 +34,18 @@ El sistema SHALL permitir al `super_admin` listar, crear y editar tenants.
 - WHEN crea o edita un tenant definiendo su slug
 - THEN el slug queda guardado y es único
 
+#### Scenario: Deshabilitar un tenant
+
+- GIVEN un usuario con rol `super_admin`
+- WHEN deshabilita un tenant (empresa que se da de baja)
+- THEN los usuarios de ese tenant no pueden iniciar sesión ni registrarse con su código
+
+#### Scenario: Eliminar un tenant
+
+- GIVEN un usuario con rol `super_admin`
+- WHEN elimina un tenant
+- THEN el tenant y todos sus usuarios y datos se borran permanentemente
+
 ### Requirement: Gestión global de usuarios
 
 El sistema SHALL permitir al `super_admin` listar y editar todos los usuarios de la plataforma.
