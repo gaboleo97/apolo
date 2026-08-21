@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Drawer from "@mui/material/Drawer";
@@ -32,6 +32,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import HomeIcon from "@mui/icons-material/Home";
 import type { ModuleKey } from "@apolo/core";
 
 const drawerWidth = 240;
@@ -60,6 +61,13 @@ export default function DashboardShell({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      window.location.href = "/login";
+    }
+  }, [status]);
   const isTenantAdmin = role === "tenant_admin";
   const isSuperAdmin = role === "super_admin";
   const visibleModules = moduleMenu.filter((item) => modules.includes(item.key));
@@ -106,14 +114,16 @@ export default function DashboardShell({
           py: 2,
         }}
       >
-        <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, fontSize: 14, fontWeight: 700 }}>
-          A
-        </Avatar>
-        {!collapsed && (
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            Apolo
-          </Typography>
-        )}
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit" }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32, fontSize: 14, fontWeight: 700 }}>
+            A
+          </Avatar>
+          {!collapsed && (
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              Apolo
+            </Typography>
+          )}
+        </Link>
       </Box>
       <Divider />
       <List sx={{ flexGrow: 1 }}>
@@ -124,6 +134,7 @@ export default function DashboardShell({
       </List>
       <Divider />
       <List>
+        {renderItem("Volver al inicio", "/", <HomeIcon />)}
         {renderItem("Mi cuenta", "/dashboard/account", <AccountCircleIcon />)}
         <ListItem disablePadding>
           <Tooltip title="Cerrar sesión" placement="right">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeRegistry } from "@apolo/ui";
+import Providers from "./providers";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
@@ -17,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <ThemeRegistry>{children}</ThemeRegistry>
+        <Providers>
+          <ThemeRegistry>{children}</ThemeRegistry>
+        </Providers>
       </body>
     </html>
   );

@@ -5,6 +5,7 @@ import { db } from "@apolo/database";
 import { users } from "@apolo/database";
 import { getEffectiveModules } from "@apolo/core";
 import { authConfig } from "./auth.config";
+import { getIp, rateLimit } from "./rate-limit";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -15,10 +16,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = credentials?.email as string;
         const password = credentials?.password as string;
         if (!email || !password) return null;
+
+        const allowed = await rateLimit("login", getIp(request), 5, "1 m");
+        if (!allowed) return null;
 
         const user = await db.query.users.findFirst({
           where: (users, { eq }) => eq(users.email, email),

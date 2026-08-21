@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { registerViewerUser } from "@apolo/auth";
 import { sendWelcomeEmail } from "@apolo/email";
+import { getIp, rateLimit } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   slug: z.string().min(1).max(60),
@@ -11,6 +12,11 @@ const registerSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const ip = getIp(req);
+  if (!(await rateLimit("register", ip, 10, "1 m"))) {
+    return NextResponse.json({ error: "Demasiados intentos. Intentá más tarde." }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {

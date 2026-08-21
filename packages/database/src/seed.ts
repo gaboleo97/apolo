@@ -13,7 +13,12 @@ const sql = postgres(DATABASE_URL, { prepare: false });
 
 async function main() {
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@apolo.app";
-  const password = process.env.SEED_ADMIN_PASSWORD ?? "admin1234";
+  const password = process.env.SEED_ADMIN_PASSWORD;
+
+  if (!password) {
+    console.error("❌ SEED_ADMIN_PASSWORD no está definido. Definí una contraseña fuerte antes de correr el seed.");
+    process.exit(1);
+  }
 
   const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
   if (existing.length > 0) {

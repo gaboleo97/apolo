@@ -50,10 +50,11 @@ pnpm install
 DATABASE_URL="postgres://postgres:postgres@localhost:54322/postgres" \
   pnpm --filter @apolo/database db:migrate
 
-# 4) Seed de admin (local)
+# 4) Seed de admin (local) — SEED_ADMIN_PASSWORD es obligatoria
 DATABASE_URL="postgres://postgres:postgres@localhost:54322/postgres" \
+  SEED_ADMIN_PASSWORD="tu-clave-fuerte" \
   pnpm --filter @apolo/database db:seed
-# → admin@apolo.app / admin1234
+# → crea admin@apolo.app (super_admin) con la clave que definiste
 
 # 5) Levantar el dev server
 pnpm dev
@@ -99,8 +100,8 @@ supabase projects list
 DATABASE_URL="postgres://postgres.<ref>:<password>@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require" \
   pnpm --filter @apolo/database db:migrate
 
-# 3) Seed del admin en la nube
-DATABASE_URL="<url-de-la-nube>" SEED_ADMIN_EMAIL="admin@apolo.app" SEED_ADMIN_PASSWORD="admin1234" \
+# 3) Seed del admin en la nube — SEED_ADMIN_PASSWORD es obligatoria
+DATABASE_URL="<url-de-la-nube>" SEED_ADMIN_EMAIL="admin@apolo.app" SEED_ADMIN_PASSWORD="<clave-fuerte>" \
   pnpm --filter @apolo/database db:seed
 ```
 

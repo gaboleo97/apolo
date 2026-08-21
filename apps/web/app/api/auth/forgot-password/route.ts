@@ -2,10 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createPasswordResetToken } from "@apolo/auth";
 import { sendPasswordResetEmail } from "@apolo/email";
+import { getIp, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({ email: z.string().email() });
 
 export async function POST(req: Request) {
+  const ip = getIp(req);
+  if (!(await rateLimit("forgot-password", ip, 5, "1 m"))) {
+    return NextResponse.json({ ok: true });
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

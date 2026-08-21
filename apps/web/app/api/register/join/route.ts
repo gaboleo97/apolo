@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { acceptInvitation } from "@apolo/auth";
+import { getIp, rateLimit } from "@/lib/rate-limit";
 
 const joinSchema = z.object({
   token: z.string().min(1),
@@ -10,6 +11,11 @@ const joinSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const ip = getIp(req);
+  if (!(await rateLimit("register-join", ip, 10, "1 m"))) {
+    return NextResponse.json({ error: "Demasiados intentos. Intentá más tarde." }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = joinSchema.safeParse(body);
   if (!parsed.success) {
