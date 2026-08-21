@@ -73,3 +73,30 @@ El sistema SHALL asociar cada usuario a un tenant y asignarle un rol.
 - GIVEN una sesión activa
 - THEN el token contiene `id`, `tenantId` y `role`
 - AND las rutas protegidas (`protectedProcedure`) exigen sesión
+
+### Requirement: Email de bienvenida
+
+El sistema SHALL enviar un email de bienvenida al completar el registro.
+
+#### Scenario: Registro exitoso
+
+- GIVEN un visitante que completa el registro con éxito
+- THEN se envía un email de bienvenida a la dirección registrada
+- AND si el envío falla, la cuenta se crea igualmente (el registro no falla)
+
+### Requirement: Registro por invitación
+
+El sistema SHALL permitir registrarse uniéndose a un tenant existente mediante un enlace de invitación.
+
+#### Scenario: Registro con invitación
+
+- GIVEN un visitante con un enlace de invitación válido
+- WHEN completa nombre, email y contraseña
+- THEN el usuario se crea en el tenant de la invitación con el rol y módulos asignados
+- AND el sistema redirige al login
+
+#### Scenario: Registro sin invitación
+
+- GIVEN un visitante sin enlace de invitación
+- WHEN se registra
+- THEN se crea una empresa nueva y el usuario queda como `tenant_admin`
