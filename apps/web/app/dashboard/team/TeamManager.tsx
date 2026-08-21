@@ -7,6 +7,7 @@ import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
@@ -59,8 +60,12 @@ type Invitation = {
 export default function TeamManager() {
   const [users, setUsers] = useState<TeamUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [snack, setSnack] = useState<{ msg: string; sev: "success" | "error" } | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  function notify(msg: string, sev: "success" | "error") {
+    setSnack({ msg, sev });
+  }
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -77,7 +82,7 @@ export default function TeamManager() {
   const load = useCallback(async () => {
     const res = await fetch("/api/team");
     if (!res.ok) {
-      setError("No se pudieron cargar los usuarios");
+      notify("No se pudieron cargar los usuarios", "error");
       setLoading(false);
       return;
     }
@@ -105,7 +110,6 @@ export default function TeamManager() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     const res = await fetch("/api/team", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -113,7 +117,7 @@ export default function TeamManager() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "No se pudo crear el usuario");
+      notify(data.error ?? "No se pudo crear el usuario", "error");
       return;
     }
     setName("");
@@ -122,11 +126,11 @@ export default function TeamManager() {
     setRole("seller");
     setModules(["sales"]);
     load();
+    notify("Usuario creado", "success");
   }
 
   async function handleSave(u: TeamUser, nextRole: string, nextModules: string[]) {
     setSavingId(u.id);
-    setError(null);
     const res = await fetch(`/api/team/${u.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -134,15 +138,15 @@ export default function TeamManager() {
     });
     setSavingId(null);
     if (!res.ok) {
-      setError("No se pudo guardar el usuario");
+      notify("No se pudo guardar el usuario", "error");
       return;
     }
     load();
+    notify("Usuario actualizado", "success");
   }
 
   async function handleCreateInvite(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     const res = await fetch("/api/team/invitations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -154,13 +158,14 @@ export default function TeamManager() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "No se pudo crear la invitación");
+      notify(data.error ?? "No se pudo crear la invitación", "error");
       return;
     }
     setInviteEmail("");
     setInviteRole("seller");
     setInviteModules(["sales"]);
     loadInvitations();
+    notify("Invitación generada", "success");
   }
 
   async function copyLink(token: string) {
@@ -178,8 +183,6 @@ export default function TeamManager() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
         Administrá los usuarios de tu empresa: rol y módulos que cada uno puede ver.
       </Typography>
-
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
@@ -351,6 +354,17 @@ export default function TeamManager() {
           </Box>
         )}
       </Paper>
+
+      <Snackbar
+        open={Boolean(snack)}
+        autoHideDuration={4000}
+        onClose={() => setSnack(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity={snack?.sev} variant="filled" onClose={() => setSnack(null)}>
+          {snack?.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

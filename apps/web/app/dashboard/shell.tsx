@@ -31,6 +31,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import type { ModuleKey } from "@apolo/core";
 
 const drawerWidth = 240;
@@ -123,6 +124,7 @@ export default function DashboardShell({
       </List>
       <Divider />
       <List>
+        {renderItem("Mi cuenta", "/dashboard/account", <AccountCircleIcon />)}
         <ListItem disablePadding>
           <Tooltip title="Cerrar sesión" placement="right">
             <ListItemButton
