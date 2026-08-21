@@ -226,6 +226,9 @@ export default function DashboardShell({
         variant="permanent"
         sx={{
           display: { xs: "none", md: "block" },
+          width: collapsed ? miniWidth : drawerWidth,
+          flexShrink: 0,
+          transition: "width 0.2s",
           "& .MuiDrawer-paper": {
             width: collapsed ? miniWidth : drawerWidth,
             overflowX: "hidden",
