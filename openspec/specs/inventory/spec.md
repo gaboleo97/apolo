@@ -85,3 +85,42 @@ El sistema SHALL restringir el inventario a los usuarios con el módulo `invento
 - GIVEN un usuario sin el módulo `inventory`
 - WHEN intenta acceder a la página o a la API de inventario
 - THEN el sistema deniega el acceso (redirige o responde 403)
+
+### Requirement: Importación y exportación masiva
+
+El sistema SHALL permitir exportar e importar productos en CSV.
+
+#### Scenario: Descargar plantilla
+
+- GIVEN un usuario con el módulo `inventory`
+- WHEN descarga la plantilla
+- THEN recibe un CSV con las columnas de producto y una fila de ejemplo
+
+#### Scenario: Exportar productos
+
+- GIVEN un usuario con el módulo `inventory`
+- WHEN exporta los productos
+- THEN recibe un CSV con los productos de su tenant en el mismo formato de la plantilla
+
+#### Scenario: Importar creando productos
+
+- GIVEN un usuario con el módulo `inventory`
+- WHEN sube un CSV con productos que no existen
+- THEN se crean los productos asociados a su tenant
+
+#### Scenario: Importar sin duplicar
+
+- GIVEN un CSV con productos que ya existen (por SKU, código de barras o nombre)
+- WHEN se sube el CSV
+- THEN los existentes se actualizan en vez de duplicarse
+
+#### Scenario: Importar actualiza stock con movimiento
+
+- GIVEN un CSV con una cantidad de stock para un producto existente
+- WHEN se sube el CSV
+- THEN se actualiza el stock y se registra un movimiento de ajuste en el historial
+
+#### Scenario: Reporte de importación
+
+- GIVEN una importación
+- THEN el sistema devuelve cuántos productos se crearon, cuántos se actualizaron y los errores con su fila

@@ -178,3 +178,203 @@ export async function listMovements(tenantId: string, productId?: string) {
     limit: 100,
   });
 }
+
+export type ImportRow = {
+  nombre?: string;
+  categoria?: string;
+  sku?: string;
+  codigo_barras?: string;
+  unidad?: string;
+  precio?: string;
+  costo?: string;
+  iva?: string;
+  stock_minimo?: string;
+  stock?: string;
+  descripcion?: string;
+  activo?: string;
+};
+
+export type ImportReport = {
+  created: number;
+  updated: number;
+  errors: { line: number; error: string }[];
+};
+
+function parseNumber(v?: string): number | null {
+  if (v == null) return null;
+  let s = v.trim().replace(/[^0-9.,-]/g, "");
+  if (s === "") return null;
+  if (s.includes(",") && s.includes(".")) {
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else if (s.includes(",")) {
+    s = s.replace(",", ".");
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseBool(v?: string): boolean {
+  if (!v || v.trim() === "") return true;
+  const k = v.trim().toLowerCase();
+  return !["no", "false", "0", "inactivo", "off"].includes(k);
+}
+
+const unitMap: Record<string, UnitType> = {
+  unidad: "unit", un: "unit", u: "unit", unit: "unit",
+  kg: "kg", kilogramo: "kg", kilos: "kg",
+  lt: "lt", l: "lt", litro: "lt", litros: "lt",
+  m: "m", metro: "m", metros: "m",
+  box: "box", caja: "box", cajas: "box",
+  pack: "pack", paquete: "pack",
+};
+
+function normalizeUnit(v?: string): UnitType {
+  if (!v || v.trim() === "") return "unit";
+  return unitMap[v.trim().toLowerCase()] ?? "unit";
+}
+
+async function findOrCreateCategory(tenantId: string, name: string): Promise<string | null> {
+  let cat = await db.query.categories.findFirst({
+    where: and(eq(categories.tenantId, tenantId), ilike(categories.name, name.trim())),
+  });
+  if (!cat) {
+    const created = await db
+      .insert(categories)
+      .values({
+        tenantId,
+        name: name.trim(),
+        slug: name.trim().toLowerCase().replace(/\s+/g, "-"),
+        isActive: true,
+      })
+      .returning();
+    cat = created[0];
+  }
+  return cat?.id ?? null;
+}
+
+async function findProductByKey(tenantId: string, sku: string | null, barcode: string | null, name: string) {
+  if (sku) {
+    const row = await db.query.products.findFirst({
+      where: and(eq(products.tenantId, tenantId), ilike(products.sku, sku)),
+    });
+    if (row) return row;
+  }
+  if (barcode) {
+    const row = await db.query.products.findFirst({
+      where: and(eq(products.tenantId, tenantId), ilike(products.barcode, barcode)),
+    });
+    if (row) return row;
+  }
+  return db.query.products.findFirst({
+    where: and(eq(products.tenantId, tenantId), ilike(products.name, name)),
+  });
+}
+
+export async function upsertProducts(
+  tenantId: string,
+  userId: string,
+  rows: ImportRow[]
+): Promise<ImportReport> {
+  const report: ImportReport = { created: 0, updated: 0, errors: [] };
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+    const line = i + 2;
+
+    try {
+      const nombre = row.nombre?.trim();
+      if (!nombre) {
+        report.errors.push({ line, error: "Falta nombre" });
+        continue;
+      }
+
+      const precio = parseNumber(row.precio);
+      if (precio == null || precio <= 0) {
+        report.errors.push({ line, error: "Precio inválido o faltante" });
+        continue;
+      }
+
+      const costo = parseNumber(row.costo);
+      const iva = parseNumber(row.iva) ?? 21;
+      const stockMinimo = parseNumber(row.stock_minimo);
+      const stock = parseNumber(row.stock);
+      const unidad = normalizeUnit(row.unidad);
+      const activo = parseBool(row.activo);
+
+      const sku = row.sku?.trim() || null;
+      const barcode = row.codigo_barras?.trim() || null;
+
+      const categoryId = row.categoria?.trim() ? await findOrCreateCategory(tenantId, row.categoria) : null;
+
+      const existing = await findProductByKey(tenantId, sku, barcode, nombre);
+
+      if (existing) {
+        await db
+          .update(products)
+          .set({
+            name: nombre,
+            categoryId,
+            price: String(precio),
+            cost: costo != null ? String(costo) : null,
+            taxRate: String(iva),
+            minStock: stockMinimo != null ? Math.round(stockMinimo) : 0,
+            unitType: unidad,
+            sku: sku ?? existing.sku,
+            barcode: barcode ?? existing.barcode,
+            description: row.descripcion?.trim() || null,
+            isActive: activo,
+          })
+          .where(eq(products.id, existing.id));
+
+        if (stock != null) {
+          await adjustStock(tenantId, {
+            productId: existing.id,
+            type: "adjustment",
+            quantity: Math.round(stock),
+            notes: "carga masiva",
+            userId,
+          });
+        }
+
+        report.updated++;
+      } else {
+        const created = await db
+          .insert(products)
+          .values({
+            tenantId,
+            name: nombre,
+            categoryId,
+            price: String(precio),
+            cost: costo != null ? String(costo) : null,
+            taxRate: String(iva),
+            sku,
+            barcode,
+            unitType: unidad,
+            minStock: stockMinimo != null ? Math.round(stockMinimo) : 0,
+            currentStock: 0,
+            description: row.descripcion?.trim() || null,
+            isActive: activo,
+          })
+          .returning();
+
+        const p = created[0];
+        if (p && stock != null && stock > 0) {
+          await adjustStock(tenantId, {
+            productId: p.id,
+            type: "adjustment",
+            quantity: Math.round(stock),
+            notes: "carga masiva",
+            userId,
+          });
+        }
+
+        report.created++;
+      }
+    } catch {
+      report.errors.push({ line, error: "Error inesperado" });
+    }
+  }
+
+  return report;
+}

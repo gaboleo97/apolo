@@ -102,6 +102,10 @@ export default function InventoryModule() {
   const [stockQty, setStockQty] = useState("1");
   const [stockNotes, setStockNotes] = useState("");
 
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importReport, setImportReport] = useState<{ created: number; updated: number; errors: { line: number; error: string }[] } | null>(null);
+  const [importing, setImporting] = useState(false);
+
   function notify(msg: string, sev: "success" | "error") {
     setSnack({ msg, sev });
   }
@@ -242,6 +246,37 @@ export default function InventoryModule() {
     }
   }
 
+  async function handleImport() {
+    if (!importFile) {
+      notify("Seleccioná un archivo CSV primero", "error");
+      return;
+    }
+    setImporting(true);
+    setImportReport(null);
+
+    const formData = new FormData();
+    formData.append("file", importFile);
+
+    const res = await fetch("/api/inventory/products/import", {
+      method: "POST",
+      body: formData,
+    });
+
+    setImporting(false);
+
+    if (res.ok) {
+      const data = await res.json();
+      setImportReport(data.report);
+      notify(`Carga completada: ${data.report.created} creados, ${data.report.updated} actualizados`, "success");
+      setImportFile(null);
+      loadProducts();
+      loadMovements();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      notify(data.error ?? "No se pudo importar el archivo", "error");
+    }
+  }
+
   return (
     <Box>
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
@@ -255,6 +290,7 @@ export default function InventoryModule() {
         <Tab label="Productos" />
         <Tab label="Categorías" />
         <Tab label="Stock" />
+        <Tab label="Carga masiva" />
       </Tabs>
 
       {tab === 0 && (
@@ -421,6 +457,57 @@ export default function InventoryModule() {
               </TableBody>
             </Table>
           </Paper>
+        </Box>
+      )}
+
+      {tab === 3 && (
+        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <Paper sx={{ p: 3, minWidth: 320 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Carga masiva de productos</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              1. Descargá la plantilla, completala y subila. Si un producto ya existe (por SKU, código de barras o nombre), se actualiza en vez de duplicarse.
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Button variant="outlined" href="/api/inventory/products/template" component="a">
+                  Descargar plantilla
+                </Button>
+                <Button variant="outlined" href="/api/inventory/products/export" component="a">
+                  Exportar productos
+                </Button>
+              </Box>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+                <Button variant="contained" component="label" disableElevation>
+                  Elegir archivo
+                  <input type="file" accept=".csv,text/csv" hidden onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} />
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {importFile ? importFile.name : "Ningún archivo seleccionado"}
+                </Typography>
+              </Box>
+              <Button variant="contained" onClick={handleImport} disabled={importing || !importFile} disableElevation>
+                {importing ? "Cargando..." : "Cargar archivo"}
+              </Button>
+            </Box>
+          </Paper>
+
+          {importReport && (
+            <Paper sx={{ p: 3, flex: 1, minWidth: 300 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Resultado</Typography>
+              <Typography>✅ Creados: {importReport.created}</Typography>
+              <Typography>♻️ Actualizados: {importReport.updated}</Typography>
+              {importReport.errors.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" color="error">Errores ({importReport.errors.length}):</Typography>
+                  {importReport.errors.map((e, i) => (
+                    <Typography key={i} variant="body2" color="text.secondary">
+                      Fila {e.line}: {e.error}
+                    </Typography>
+                  ))}
+                </Box>
+              )}
+            </Paper>
+          )}
         </Box>
       )}
 
