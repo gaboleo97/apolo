@@ -25,6 +25,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import AnalyticsIcon from "@mui/icons-material/Analytics";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import SettingsIcon from "@mui/icons-material/Settings";
 import MenuIcon from "@mui/icons-material/Menu";
 import type { ModuleKey } from "@apolo/core";
 
@@ -52,7 +53,8 @@ export default function DashboardShell({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isAdmin = role === "tenant_admin" || role === "super_admin";
+  const isTenantAdmin = role === "tenant_admin";
+  const isSuperAdmin = role === "super_admin";
   const visibleModules = moduleMenu.filter((item) => modules.includes(item.key));
 
   const drawer = (
@@ -85,13 +87,23 @@ export default function DashboardShell({
             </ListItemButton>
           </ListItem>
         ))}
-        {isAdmin && (
+        {isTenantAdmin && (
           <ListItem disablePadding>
             <ListItemButton component={Link} href="/dashboard/team">
               <ListItemIcon sx={{ minWidth: 40, color: "text.secondary" }}>
                 <ManageAccountsIcon />
               </ListItemIcon>
               <ListItemText primary="Equipo" slotProps={{ primary: { sx: { fontSize: 14 } } }} />
+            </ListItemButton>
+          </ListItem>
+        )}
+        {isSuperAdmin && (
+          <ListItem disablePadding>
+            <ListItemButton component={Link} href="/dashboard/admin">
+              <ListItemIcon sx={{ minWidth: 40, color: "text.secondary" }}>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Administración" slotProps={{ primary: { sx: { fontSize: 14 } } }} />
             </ListItemButton>
           </ListItem>
         )}

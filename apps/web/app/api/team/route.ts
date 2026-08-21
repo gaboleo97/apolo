@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@apolo/auth";
 import { createTeamUser } from "@apolo/auth";
 import { db } from "@apolo/database";
-import { ALL_MODULES, type ModuleKey } from "@apolo/core";
+import { ALL_MODULES, assignableRoles, type ModuleKey, type UserRole } from "@apolo/core";
 
 const roleSchema = z.enum(["super_admin", "tenant_admin", "manager", "seller", "viewer"]);
 const modulesSchema = z.array(z.enum(ALL_MODULES as [string, ...string[]]));
@@ -52,6 +52,11 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+
+  const allowedRoles = assignableRoles(admin.role as UserRole);
+  if (!allowedRoles.includes(parsed.data.role)) {
+    return NextResponse.json({ error: "No tenés permiso para asignar ese rol" }, { status: 403 });
+  }
 
   try {
     const user = await createTeamUser({

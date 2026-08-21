@@ -30,3 +30,12 @@ export function getEffectiveModules(
   const base = override ?? roleDefaultModules[role];
   return (base.filter(isModuleKey) as ModuleKey[]);
 }
+
+const ASSIGNABLE_ROLES: Record<"super_admin" | "tenant_admin", UserRole[]> = {
+  super_admin: ["super_admin", "tenant_admin", "manager", "seller", "viewer"],
+  tenant_admin: ["tenant_admin", "manager", "seller", "viewer"],
+};
+
+export function assignableRoles(actorRole: UserRole): UserRole[] {
+  return actorRole === "super_admin" ? ASSIGNABLE_ROLES.super_admin : ASSIGNABLE_ROLES.tenant_admin;
+}

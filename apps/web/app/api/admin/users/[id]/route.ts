@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@apolo/auth";
-import { updateTeamUser } from "@apolo/auth";
-import { ALL_MODULES, assignableRoles, type ModuleKey, type UserRole } from "@apolo/core";
+import { adminUpdateUser } from "@apolo/auth";
+import { ALL_MODULES, type ModuleKey } from "@apolo/core";
+
+async function requireSuperAdmin() {
+  const session = await auth();
+  if (!session?.user) return null;
+  if (session.user.role !== "super_admin") return null;
+  return session.user;
+}
 
 const roleSchema = z.enum(["super_admin", "tenant_admin", "manager", "seller", "viewer"]);
 const modulesSchema = z.array(z.enum(ALL_MODULES as [string, ...string[]]));
 
 const updateSchema = z.object({
-  name: z.string().min(2).max(80).optional(),
+  tenantId: z.string().uuid().optional(),
   role: roleSchema.optional(),
   modules: modulesSchema.optional(),
   isActive: z.boolean().optional(),
@@ -18,28 +25,16 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  const admin = session?.user;
-  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (admin.role !== "tenant_admin" && admin.role !== "super_admin") {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  const admin = await requireSuperAdmin();
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
 
-  if (parsed.data.role !== undefined) {
-    const allowedRoles = assignableRoles(admin.role as UserRole);
-    if (!allowedRoles.includes(parsed.data.role)) {
-      return NextResponse.json({ error: "No tenés permiso para asignar ese rol" }, { status: 403 });
-    }
-  }
-
-  const user = await updateTeamUser({
+  const user = await adminUpdateUser({
     userId: id,
-    tenantId: admin.tenantId,
     ...parsed.data,
     modules: parsed.data.modules as ModuleKey[] | undefined,
   });

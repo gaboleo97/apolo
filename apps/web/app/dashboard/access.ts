@@ -21,3 +21,11 @@ export async function requireTenantAdmin() {
   }
   return session;
 }
+
+export async function requireSuperAdmin() {
+  const session = await requireSession();
+  if (session.user.role !== "super_admin") {
+    redirect("/dashboard");
+  }
+  return session;
+}

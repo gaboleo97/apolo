@@ -66,3 +66,35 @@ export async function updateTeamUser(input: {
 
   return { id: user.id, email: user.email, role: user.role, modules: user.modules, name: user.name };
 }
+
+export async function adminUpdateUser(input: {
+  userId: string;
+  tenantId?: string;
+  role?: UserRole;
+  modules?: ModuleKey[];
+  isActive?: boolean;
+}) {
+  const updated = await db
+    .update(users)
+    .set({
+      ...(input.tenantId !== undefined ? { tenantId: input.tenantId } : {}),
+      ...(input.role !== undefined ? { role: input.role } : {}),
+      ...(input.modules !== undefined ? { modules: input.modules } : {}),
+      ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+    })
+    .where(eq(users.id, input.userId))
+    .returning();
+
+  const user = updated[0];
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    modules: user.modules,
+    name: user.name,
+    tenantId: user.tenantId,
+    isActive: user.isActive,
+  };
+}
