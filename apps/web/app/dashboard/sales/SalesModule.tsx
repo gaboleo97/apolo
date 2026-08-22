@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Box from "@mui/material/Box";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -344,19 +345,24 @@ export default function SalesModule() {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h5">Ventas</Typography>
-        <Button
-          variant="contained"
-          disableElevation
-          onClick={() => {
-            setEditingId(null);
-            setCart([]);
-            setNotes("");
-            setClientId("");
-            setOpenNew(true);
-          }}
-        >
-          Nueva venta
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button component={Link} href="/dashboard/sales/designer">
+            Diseño de comprobantes
+          </Button>
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={() => {
+              setEditingId(null);
+              setCart([]);
+              setNotes("");
+              setClientId("");
+              setOpenNew(true);
+            }}
+          >
+            Nueva venta
+          </Button>
+        </Box>
       </Box>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
@@ -658,7 +664,22 @@ export default function SalesModule() {
                 <Typography variant="body2" color="text.secondary">Notas: {detail.sale.notes}</Typography>
               )}
             </DialogContent>
-            <DialogActions>
+            <DialogActions sx={{ flexWrap: "wrap", gap: 1 }}>
+              <Button
+                onClick={() =>
+                  window.open(`/print/sale/${detail.sale.id}?format=a4&auto=1`, "_blank")
+                }
+              >
+                🖨️ A4
+              </Button>
+              <Button
+                onClick={() =>
+                  window.open(`/print/sale/${detail.sale.id}?format=thermal80&auto=1`, "_blank")
+                }
+              >
+                🧾 Térmica 80mm
+              </Button>
+              <Box sx={{ flex: 1 }} />
               {detail.sale.status === "draft" && (
                 <Button variant="contained" disableElevation onClick={() => detailAction("confirm")}>
                   Confirmar venta

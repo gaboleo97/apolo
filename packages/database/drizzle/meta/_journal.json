@@ -71,6 +71,13 @@
       "when": 1787355898011,
       "tag": "0009_eager_midnight",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787398002603,
+      "tag": "0010_true_wendigo",
+      "breakpoints": true
     }
   ]
 }

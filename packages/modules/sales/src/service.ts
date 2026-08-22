@@ -1,5 +1,5 @@
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
-import { db, clients, products, saleItems, salePayments, sales } from "@apolo/database";
+import { db, clients, products, saleItems, salePayments, sales, users } from "@apolo/database";
 
 function toNum(v: unknown): number {
   return typeof v === "number" ? v : Number(v ?? 0);
@@ -161,14 +161,31 @@ export async function getSaleDetail(tenantId: string, saleId: string) {
       sale: sales,
       clientName: clients.name,
       clientType: clients.clientType,
+      clientTaxId: clients.taxId,
+      clientAddress: clients.address,
+      clientPhone: clients.phone,
+      sellerName: users.name,
     })
     .from(sales)
     .leftJoin(clients, eq(clients.id, sales.clientId))
+    .leftJoin(users, eq(users.id, sales.createdBy))
     .where(and(eq(sales.tenantId, tenantId), eq(sales.id, saleId)));
 
   if (!row) return null;
 
-  const items = await db.select().from(saleItems).where(eq(saleItems.saleId, saleId));
+  const items = await db
+    .select({
+      id: saleItems.id,
+      productId: saleItems.productId,
+      nameSnapshot: saleItems.nameSnapshot,
+      quantity: saleItems.quantity,
+      unitPrice: saleItems.unitPrice,
+      lineTotal: saleItems.lineTotal,
+      productSku: products.sku,
+    })
+    .from(saleItems)
+    .leftJoin(products, eq(products.id, saleItems.productId))
+    .where(eq(saleItems.saleId, saleId));
   const payments = await db
     .select()
     .from(salePayments)
@@ -182,6 +199,10 @@ export async function getSaleDetail(tenantId: string, saleId: string) {
     sale: row.sale,
     clientName: row.clientName,
     clientType: row.clientType,
+    clientTaxId: row.clientTaxId,
+    clientAddress: row.clientAddress,
+    clientPhone: row.clientPhone,
+    sellerName: row.sellerName,
     items,
     payments,
     total,

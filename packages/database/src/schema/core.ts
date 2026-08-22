@@ -8,6 +8,11 @@ export const tenants = pgTable("tenants", {
   plan: text("plan", { enum: ["freemium", "starter", "business", "enterprise"] }).default("freemium"),
   modulesEnabled: jsonb("modules_enabled").$type<string[]>().default([]),
   priceRounding: text("price_rounding", { enum: ["none", "10", "50", "100"] }).default("none"),
+  taxId: text("tax_id"),
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  logoUrl: text("logo_url"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
