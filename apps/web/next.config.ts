@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
     "@apolo/module-inventory",
     "@apolo/module-suppliers",
     "@apolo/module-clients",
+    "@apolo/module-sales",
   ],
   async headers() {
     return [

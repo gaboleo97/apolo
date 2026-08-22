@@ -1,7 +1,7 @@
 import { requireModule } from "../access";
-import ModulePlaceholder from "../_components/ModulePlaceholder";
+import SalesModule from "./SalesModule";
 
 export default async function SalesPage() {
   await requireModule("sales");
-  return <ModulePlaceholder title="Ventas" description="Punto de venta y facturación." />;
+  return <SalesModule />;
 }

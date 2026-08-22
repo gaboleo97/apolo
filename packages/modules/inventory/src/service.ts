@@ -180,7 +180,15 @@ export type StockType = "in" | "out" | "adjustment";
 
 export async function adjustStock(
   tenantId: string,
-  input: { productId: string; type: StockType; quantity: number; notes?: string | null; userId: string }
+  input: {
+    productId: string;
+    type: StockType;
+    quantity: number;
+    notes?: string | null;
+    userId: string;
+    referenceType?: string | null;
+    referenceId?: string | null;
+  }
 ) {
   return db.transaction(async (tx) => {
     const product = await tx.query.products.findFirst({
@@ -208,6 +216,8 @@ export async function adjustStock(
       type: input.type,
       quantity: String(input.quantity),
       notes: input.notes?.trim() || null,
+      referenceType: input.referenceType ?? null,
+      referenceId: input.referenceId ?? null,
     });
 
     return { ok: true as const, currentStock: next };
