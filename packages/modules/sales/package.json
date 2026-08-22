@@ -9,10 +9,11 @@
   },
   "dependencies": {
     "@apolo/core": "workspace:*",
-    "@apolo/database": "workspace:*"
+    "@apolo/database": "workspace:*",
+    "@apolo/module-inventory": "workspace:*",
+    "drizzle-orm": "^0.40.0"
   },
   "devDependencies": {
-    "@apolo/module-inventory": "workspace:*",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }

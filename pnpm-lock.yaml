@@ -334,10 +334,13 @@ importers:
       '@apolo/database':
         specifier: workspace:*
         version: link:../../database
-    devDependencies:
       '@apolo/module-inventory':
         specifier: workspace:*
         version: link:../inventory
+      drizzle-orm:
+        specifier: ^0.40.0
+        version: 0.40.1(gel@2.2.0)(postgres@3.4.9)
+    devDependencies:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
