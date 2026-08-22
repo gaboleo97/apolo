@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   clients,
   db,
@@ -134,7 +134,7 @@ describe.skipIf(!dbUp)("sales service (integracion)", () => {
     const movs = await db
       .select()
       .from(stockMovements)
-      .where(eq(stockMovements.referenceType, "sale"));
+      .where(and(eq(stockMovements.tenantId, tidA), eq(stockMovements.referenceType, "sale")));
     expect(movs.filter((m) => m.type === "out")).toHaveLength(2);
     for (const m of movs) expect(m.notes).toContain("V-0003");
 
@@ -249,7 +249,7 @@ describe.skipIf(!dbUp)("sales service (integracion)", () => {
     const movsIn = await db
       .select()
       .from(stockMovements)
-      .where(eq(stockMovements.referenceType, "sale_cancel"));
+      .where(and(eq(stockMovements.tenantId, tidA), eq(stockMovements.referenceType, "sale_cancel")));
     expect(movsIn).toHaveLength(1);
 
     const listed = await listSales(tidA);
